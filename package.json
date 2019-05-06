@@ -1,0 +1,32 @@
+{
+  "name": "westbrook2019",
+  "version": "1.0.0",
+  "description": "An analysis of Russel Westbrook 2019 season ",
+  "main": "index.ts",
+  "scripts": {
+    "watch": "tsc --watch",
+    "test": "npx jest",
+    "start": "npx ts-node ./src/index.ts"
+  },
+  "keywords": [
+    "westbrook",
+    "nba"
+  ],
+  "author": "Boris Tane",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/d3": "^5.7.2",
+    "@types/jest": "^24.0.12",
+    "@types/node": "^12.0.0",
+    "jest": "^24.8.0",
+    "prettier": "^1.17.0",
+    "puppeteer": "^1.15.0",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "typescript": "^3.4.5"
+  },
+  "dependencies": {
+    "d3": "^5.9.2"
+  }
+}
