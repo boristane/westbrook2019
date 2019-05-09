@@ -18,7 +18,6 @@ afterEach(function() {
 describe('Rendering the heatmap', () => {
   beforeEach(() => {
     heatmapChart = heatmap();
-
     container = d3.select('.container');
     container.datum(data).call(heatmapChart);
   });
@@ -27,5 +26,18 @@ describe('Rendering the heatmap', () => {
     const expected = 1;
     const actual = container.select('.heatmap').nodes().length;
     expect(actual).toEqual(expected);
+  });
+
+  it('should render a square for each hour of the week', () => {
+    const actual = container.select('.box').nodes().length;
+    expect(actual).toEqual(24 * 7);
+  });
+
+  it('should create a container and a chart groups', () => {
+    const numContainerGroups = container.select('g.container-group').nodes()
+      .length;
+    const numChartGroups = container.select('g.chart-group').nodes().length;
+    expect(numContainerGroups).toEqual(1);
+    expect(numChartGroups).toEqual(1);
   });
 });

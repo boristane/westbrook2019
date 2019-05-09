@@ -5,3 +5,5 @@ src/**/*.js
 *.js.map
 *.txt
 .env
+.cache
+dist
