@@ -3,6 +3,8 @@ export interface HeatmapProperties {
   height: number;
   margin: Margin;
   boxSize: number;
+  xLabels: string[];
+  yLabels: string[];
 }
 
 export interface Margin {

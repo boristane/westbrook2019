@@ -7,8 +7,11 @@ export default class Heatmap {
   height: number;
   margin: Margin;
   boxSize: number;
+  xLabels: string[];
+  yLabels: string[];
   private chartWith: number;
   private chartHeight: number;
+  private readonly fontSize: number = 12;
   private readonly colorSchema: string[] = [
     '#C0FFE7',
     '#95F6D7',
@@ -24,6 +27,8 @@ export default class Heatmap {
     this.height = properties.height;
     this.margin = properties.margin;
     this.boxSize = properties.boxSize;
+    this.xLabels = properties.xLabels;
+    this.yLabels = properties.yLabels;
     this.chartWith = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
   }
@@ -33,8 +38,13 @@ export default class Heatmap {
       .append('g')
       .classed('container-group', true)
       .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
-    container.append('g').classed('chart-group', true);
+    container
+      .append('g')
+      .classed('chart-group', true)
+      .attr('transform', `translate(${2 * this.fontSize})`);
     container.append('g').classed('metadata-group', true);
+    container.append('g').classed('x-label-group', true);
+    container.append('g').classed('y-label-group', true);
   }
 
   private generateColorScale(values: number[]): ScaleLinear<string, string> {
@@ -82,12 +92,56 @@ export default class Heatmap {
     boxes.exit().remove();
   }
 
-  public make(selector: string, data): void {
+  private generateLabels() {
+    const xLabelsGroup = this.svg.select('.x-label-group');
+    const xLabelElts = this.svg
+      .select('.x-label-group')
+      .selectAll('.x-label')
+      .data(this.xLabels);
+    xLabelElts
+      .enter()
+      .append('text')
+      .text((d) => d)
+      .attr('y', 0)
+      .attr('x', (d, i) => i * this.boxSize)
+      .style('text-anchor', 'middle')
+      .style('dominant-baseline', 'central')
+      .style('font-size', () => `${this.fontSize}px`)
+      .attr('class', 'x-label');
+    xLabelsGroup.attr(
+      'transform',
+      `translate(${this.boxSize / 2 + 2 * this.fontSize}, ${this.chartHeight -
+        this.fontSize / 2})`,
+    );
+
+    const yLabelsGroup = this.svg.select('.y-label-group');
+    const yLabelElts = this.svg
+      .select('.y-label-group')
+      .selectAll('.y-label')
+      .data(this.yLabels);
+    yLabelElts
+      .enter()
+      .append('text')
+      .text((d) => d)
+      .attr('y', (d, i) => this.boxSize * i)
+      .attr('x', 0)
+      .style('text-anchor', 'middle')
+      .style('dominant-baseline', 'central')
+      .style('font-size', () => `${this.fontSize}px`)
+      .attr('class', 'y-label');
+    yLabelsGroup.attr(
+      'transform',
+      `translate(${this.fontSize / 2}, ${this.boxSize / 2})`,
+    );
+  }
+
+  public make(selector: string, data: number[][]): void {
     const daysOfWeek = data.map((elt) => elt[0]);
     const hoursOfDay = data.map((elt) => elt[1]);
     const values = data.map((elt) => elt[2]);
     this.colorScale = this.generateColorScale(values);
     this.buildSVG(selector);
     this.generateBoxes(data);
+    this.generateLabels();
   }
 }

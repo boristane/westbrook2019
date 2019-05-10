@@ -1,7 +1,4 @@
-import * as d3 from 'd3';
-import Heatmap from '../src/heatmap';
-import data from './fixtures/data.json';
-import { HeatmapProperties, Margin } from '../src/types';
+import main from '../src/index';
 
 beforeEach(() => {
   const d = document.createElement('div');
@@ -15,20 +12,7 @@ afterEach(function() {
 
 describe('Rendering the heatmap', () => {
   beforeEach(() => {
-    const margin: Margin = {
-      top: 10,
-      bottom: 10,
-      left: 10,
-      right: 10,
-    };
-    const mapProperties: HeatmapProperties = {
-      width: 600,
-      height: 400,
-      margin,
-      boxSize: 30,
-    };
-    const heatmapChart = new Heatmap(mapProperties);
-    heatmapChart.make('.container', data);
+    main();
   });
 
   it('should render one heat map', () => {
@@ -50,5 +34,17 @@ describe('Rendering the heatmap', () => {
       .length;
     expect(numContainerGroups).toEqual(1);
     expect(numChartGroups).toEqual(1);
+  });
+
+  it('should render the y-axis labels', () => {
+    const actual = document.querySelectorAll('.heatmap .y-label').length;
+    const expected = 7;
+    expect(actual).toEqual(expected);
+  });
+
+  it('should render the x-axis labels', () => {
+    const actual = document.querySelectorAll('.heatmap .x-label').length;
+    const expected = 24;
+    expect(actual).toEqual(expected);
   });
 });
