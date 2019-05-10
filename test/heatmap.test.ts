@@ -1,9 +1,7 @@
 import * as d3 from 'd3';
-import heatmap from '../src/heatmap';
+import Heatmap from '../src/heatmap';
 import data from './fixtures/data.json';
-
-let container: d3.Selection<d3.BaseType, {}, HTMLElement, any>;
-let heatmapChart;
+import { HeatmapProperties, Margin } from '../src/types';
 
 beforeEach(() => {
   const d = document.createElement('div');
@@ -17,26 +15,39 @@ afterEach(function() {
 
 describe('Rendering the heatmap', () => {
   beforeEach(() => {
-    heatmapChart = heatmap();
-    container = d3.select('.container');
-    container.datum(data).call(heatmapChart);
+    const margin: Margin = {
+      top: 10,
+      bottom: 10,
+      left: 10,
+      right: 10,
+    };
+    const mapProperties: HeatmapProperties = {
+      width: 600,
+      height: 400,
+      margin,
+      boxSize: 30,
+    };
+    const heatmapChart = new Heatmap(mapProperties);
+    heatmapChart.make('.container', data);
   });
 
   it('should render one heat map', () => {
     const expected = 1;
-    const actual = container.select('.heatmap').nodes().length;
+    const actual = document.querySelectorAll('.heatmap').length;
     expect(actual).toEqual(expected);
   });
 
   it('should render a square for each hour of the week', () => {
-    const actual = container.select('.box').nodes().length;
+    const actual = document.querySelectorAll('.heatmap .box').length;
     expect(actual).toEqual(24 * 7);
   });
 
   it('should create a container and a chart groups', () => {
-    const numContainerGroups = container.select('g.container-group').nodes()
+    const numContainerGroups = document.querySelectorAll(
+      '.heatmap g.container-group',
+    ).length;
+    const numChartGroups = document.querySelectorAll('.heatmap g.chart-group')
       .length;
-    const numChartGroups = container.select('g.chart-group').nodes().length;
     expect(numContainerGroups).toEqual(1);
     expect(numChartGroups).toEqual(1);
   });

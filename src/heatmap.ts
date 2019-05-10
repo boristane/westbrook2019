@@ -1,93 +1,93 @@
 import * as d3 from 'd3';
 import { Selection, ScaleLinear } from 'd3';
+import { HeatmapProperties, Margin } from './types';
 
-export default function heatmap(): (Selection) => void {
-  const width = 600;
-  const height = 400;
-  const margins = {
-    top: 10,
-    bottom: 10,
-    left: 10,
-    right: 10,
-  };
-  const chartWith = width - margins.left - margins.right;
-  const chartHeight = height - margins.top - margins.bottom;
-  const colorSchema = ['#C0FFE7', '#95F6D7', '#6AEDC7', '#59C3A3', '#479980'];
-  const boxSize = 30;
+export default class Heatmap {
+  width: number;
+  height: number;
+  margin: Margin;
+  boxSize: number;
+  private chartWith: number;
+  private chartHeight: number;
+  private readonly colorSchema: string[] = [
+    '#C0FFE7',
+    '#95F6D7',
+    '#6AEDC7',
+    '#59C3A3',
+    '#479980',
+  ];
+  private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
+  private colorScale: ScaleLinear<string, string>;
 
-  let svg: Selection<any, any, null, undefined>;
-  let colorScale: ScaleLinear<string, string>;
+  constructor(properties: HeatmapProperties) {
+    this.width = properties.width;
+    this.height = properties.height;
+    this.margin = properties.margin;
+    this.boxSize = properties.boxSize;
+    this.chartWith = this.width - this.margin.left - this.margin.right;
+    this.chartHeight = this.height - this.margin.top - this.margin.bottom;
+  }
 
-  const generateContainerGroups = (
-    svg: Selection<any, any, null, undefined>,
-  ): Selection<any, any, null, undefined> => {
-    const container = svg
+  private generateContainerGroups(): void {
+    const container = this.svg
       .append('g')
       .classed('container-group', true)
-      .attr('transform', `translate(${margins.left}, ${margins.top})`);
+      .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
     container.append('g').classed('chart-group', true);
     container.append('g').classed('metadata-group', true);
+  }
 
-    return container;
-  };
-
-  const generateColorScale = (
-    values: number[],
-  ): ScaleLinear<string, string> => {
+  private generateColorScale(values: number[]): ScaleLinear<string, string> {
     const colorScale = d3
       .scaleLinear<string>()
-      .range([colorSchema[0], colorSchema[colorSchema.length - 1]])
+      .range([
+        this.colorSchema[0],
+        this.colorSchema[this.colorSchema.length - 1],
+      ])
       .domain(d3.extent(values, (value) => value))
       .interpolate(d3.interpolateHcl);
 
     return colorScale;
-  };
+  }
 
-  const buildSVG = (
-    htmlElement: HTMLDivElement,
-  ): Selection<any, any, null, undefined> => {
-    if (!svg) {
-      svg = d3
-        .select(htmlElement)
+  private buildSVG(selector: string): void {
+    if (!this.svg) {
+      this.svg = d3
+        .select(selector)
         .append('svg')
         .classed('heatmap', true);
-      generateContainerGroups(svg);
+      this.generateContainerGroups();
     }
-    svg
-      .attr('width', width + margins.left + margins.right)
-      .attr('height', height + margins.top + margins.bottom);
-    return svg;
-  };
+    this.svg
+      .attr('width', this.width + this.margin.left + this.margin.right)
+      .attr('height', this.height + this.margin.top + this.margin.bottom);
+  }
 
-  const generateBoxes = (
-    data: number[][],
-    colorScale: ScaleLinear<string, string>,
-  ) => {
-    const boxes = svg
+  private generateBoxes(data: number[][]): void {
+    const boxes = this.svg
       .select('.chart-group')
       .selectAll('.box')
       .data(data);
+
     boxes
       .enter()
       .append('rect')
-      .attr('width', boxSize)
-      .attr('height', boxSize)
-      .attr('y', (d) => d[0] * boxSize)
-      .attr('x', (d) => d[1] * boxSize)
-      .style('fill', (d) => colorScale(d[2]))
+      .attr('width', this.boxSize)
+      .attr('height', this.boxSize)
+      .attr('y', (d) => d[0] * this.boxSize)
+      .attr('x', (d) => d[1] * this.boxSize)
+      .style('fill', (d) => this.colorScale(d[2]))
       .classed('box', true);
 
     boxes.exit().remove();
-  };
+  }
 
-  return (selection: Selection<any, any, any, any>) => {
-    selection.each(function(data: number[][]) {
-      const daysOfWeek = data.map((elt) => elt[0]);
-      const hoursOfDay = data.map((elt) => elt[1]);
-      const values = data.map((elt) => elt[2]);
-      colorScale = generateColorScale(values);
-      svg = buildSVG(this);
-      generateBoxes(data, colorScale);
-    });
-  };
+  public make(selector: string, data): void {
+    const daysOfWeek = data.map((elt) => elt[0]);
+    const hoursOfDay = data.map((elt) => elt[1]);
+    const values = data.map((elt) => elt[2]);
+    this.colorScale = this.generateColorScale(values);
+    this.buildSVG(selector);
+    this.generateBoxes(data);
+  }
 }
