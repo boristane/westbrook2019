@@ -2,11 +2,12 @@ export interface HeatmapProperties {
   width: number;
   height: number;
   margin: Margin;
-  boxSize: number;
-  animate: boolean;
+  animate?: boolean;
   xLabels: string[];
   yLabels: string[];
   data: number[][];
+  strokeWidth?: number;
+  colorSchema?: string[];
 }
 
 export interface Margin {

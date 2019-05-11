@@ -5,7 +5,15 @@ import data from '../test/fixtures/data.json';
 let heatmap: Heatmap;
 
 export default function main(data: number[][]): void {
-  const daysHuman = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+  const daysHuman = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
   const hoursHuman = [
     '00h',
     '01h',
@@ -44,11 +52,10 @@ export default function main(data: number[][]): void {
     width: 750,
     height: 250,
     margin,
-    boxSize: 30,
     xLabels: hoursHuman,
     yLabels: daysHuman,
-    animate: true,
     data,
+    colorSchema: ['green', 'red'],
   };
   heatmap = new Heatmap(mapProperties);
   heatmap.make('.container');
@@ -60,7 +67,7 @@ setInterval(() => {
   const d = data.map((elt) => [
     elt[0],
     elt[1],
-    elt[2] + Math.random() * (Math.random() < 0.5 ? 20 : -20),
+    elt[2] + Math.random() * (Math.random() < 0.5 ? 50 : -50),
   ]);
   heatmap.update(d);
 }, 1000);

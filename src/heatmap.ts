@@ -10,17 +10,12 @@ export default class Heatmap {
   xLabels: string[];
   yLabels: string[];
   animate: boolean;
+  strokeWidth: number;
   data: number[][];
   private chartWith: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
-  private readonly colorSchema: string[] = [
-    '#C0FFE7',
-    '#95F6D7',
-    '#6AEDC7',
-    '#59C3A3',
-    '#479980',
-  ];
+  colorSchema: string[];
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private colorScale: ScaleLinear<string, string>;
 
@@ -28,16 +23,29 @@ export default class Heatmap {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;
-    this.boxSize = properties.boxSize;
     this.xLabels = properties.xLabels;
     this.yLabels = properties.yLabels;
-    this.animate = properties.animate;
+    this.animate = properties.animate || true;
     this.data = properties.data;
     this.chartWith = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
+    this.strokeWidth = properties.strokeWidth || 2;
+    this.colorSchema = properties.colorSchema || ['#C0FFE7', '#479980'];
+    const numLines = Math.max(...this.data.map((elt) => elt[1]));
+    const numColumns = Math.max(...this.data.map((elt) => elt[0]));
+    const boxSizeToFitWidth = Math.floor(
+      this.chartWith / numLines - 2 * this.strokeWidth,
+    );
+    const boxSizeToFitHeight = Math.floor(
+      this.chartHeight / numColumns - 2 * this.strokeWidth,
+    );
+    this.boxSize = Math.min(boxSizeToFitWidth, boxSizeToFitHeight);
   }
 
   private generateContainerGroups(): void {
+    const maxYLabelLength = Math.max(
+      ...this.yLabels.map((label) => label.length),
+    );
     const container = this.svg
       .append('g')
       .classed('container-group', true)
@@ -45,7 +53,10 @@ export default class Heatmap {
     container
       .append('g')
       .classed('chart-group', true)
-      .attr('transform', `translate(${2 * this.fontSize})`);
+      .attr(
+        'transform',
+        `translate(${(maxYLabelLength * this.fontSize * 4) / 5})`,
+      );
     container.append('g').classed('metadata-group', true);
     container.append('g').classed('x-label-group', true);
     container.append('g').classed('y-label-group', true);
@@ -93,7 +104,7 @@ export default class Heatmap {
       // @ts-ignore
       .merge(boxes)
       .style('stroke', '#FFFFFF')
-      .style('stroke-width', 2)
+      .style('stroke-width', this.strokeWidth)
       .style('fill', 'gray')
       .classed('box', true);
 
@@ -112,6 +123,9 @@ export default class Heatmap {
 
   private generateLabels() {
     const xLabelsGroup = this.svg.select('.x-label-group');
+    const maxYLabelLength = Math.max(
+      ...this.yLabels.map((label) => label.length),
+    );
     const xLabelElts = this.svg
       .select('.x-label-group')
       .selectAll('.x-label')
@@ -126,10 +140,13 @@ export default class Heatmap {
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'x-label');
+    const numLines = Math.max(...this.data.map((elt) => elt[0]));
+    const yOffset = (this.boxSize + 2 * this.strokeWidth) * numLines;
     xLabelsGroup.attr(
       'transform',
-      `translate(${this.boxSize / 2 + 2 * this.fontSize}, ${this.chartHeight -
-        this.fontSize / 2})`,
+      `translate(${this.boxSize / 2 +
+        (maxYLabelLength * this.fontSize * 4) / 5}, ${yOffset +
+        this.fontSize})`,
     );
 
     const yLabelsGroup = this.svg.select('.y-label-group');
@@ -143,7 +160,7 @@ export default class Heatmap {
       .text((d) => d)
       .attr('y', (d, i) => this.boxSize * i)
       .attr('x', 0)
-      .style('text-anchor', 'middle')
+      .style('text-anchor', 'left')
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'y-label');
