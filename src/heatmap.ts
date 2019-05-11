@@ -18,6 +18,7 @@ export default class Heatmap {
   colorSchema: string[];
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private colorScale: ScaleLinear<string, string>;
+  private tooltip: Selection<any, any, any, any>;
 
   constructor(properties: HeatmapProperties) {
     this.width = properties.width;
@@ -106,7 +107,9 @@ export default class Heatmap {
       .style('stroke', '#FFFFFF')
       .style('stroke-width', this.strokeWidth)
       .style('fill', 'gray')
-      .classed('box', true);
+      .classed('box', true)
+      .on('mouseover', (d) => this.showTooltip([d[2]]))
+      .on('mouseout', (d) => this.hideTooltip());
 
     if (this.animate) {
       const duration = 2000;
@@ -119,6 +122,74 @@ export default class Heatmap {
       a.style('fill', (d) => this.colorScale(d[2]));
     }
     boxes.exit().remove();
+  }
+
+  private showTooltip(data: number[]): void {
+    const duration = 500;
+    const tip = this.tooltip.selectAll('.tip').data(data);
+    const a = tip
+      .enter()
+      .append('text')
+      // @ts-ignore
+      .merge(tip)
+      .text((d) => d)
+      .classed('tip', true);
+
+    this.tooltip
+      .transition()
+      .duration(duration)
+      .style('opacity', 1);
+
+    tip.exit().remove();
+  }
+
+  private hideTooltip(): void {
+    const duration = 500;
+    this.tooltip
+      .transition()
+      .duration(duration)
+      .style('opacity', 0);
+  }
+
+  private generateTooltip(selector: string): void {
+    this.tooltip = d3
+      .select(selector)
+      .append('div')
+      .classed('tooltip', true)
+      .style('position', 'absolue');
+  }
+
+  private moveTooltip(event: {
+    target: HTMLElement;
+    clientX: number;
+    clientY: number;
+  }) {
+    const tooltipPosition = this.tooltip.node().getBoundingClientRect();
+    const parent = this.tooltip.node().parentNode;
+    const parentPosition = parent.getBoundingClientRect();
+    const eventElement = event.target;
+    const eventElementPosition = eventElement.getBoundingClientRect();
+    let xTooltip = eventElementPosition.left + eventElementPosition.width / 2;
+    let yTooltip = eventElementPosition.top + eventElementPosition.height / 2;
+    if (xTooltip < 0 || yTooltip < 0) {
+      xTooltip = event.clientX;
+      yTooltip = event.clientY;
+    }
+    if (xTooltip > parentPosition.width || yTooltip > parentPosition.height) {
+      xTooltip = event.clientX;
+      yTooltip = event.clientY;
+    }
+    if (xTooltip + tooltipPosition.width > parentPosition.width) {
+      xTooltip -= tooltipPosition.width;
+    }
+    if (yTooltip + tooltipPosition.height > parentPosition.height) {
+      yTooltip -= tooltipPosition.height;
+    }
+    if (parentPosition.width < 768) {
+      xTooltip = 20;
+      yTooltip = 100;
+    }
+    this.tooltip.style('left', `${xTooltip}px`).style('top', `${yTooltip}px`);
   }
 
   private generateLabels() {
@@ -176,6 +247,7 @@ export default class Heatmap {
     this.buildSVG(selector);
     this.generateBoxes();
     this.generateLabels();
+    this.generateTooltip(selector);
   }
 
   public update(data: number[][]): void {
