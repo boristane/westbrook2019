@@ -1,8 +1,4 @@
-@font-face {
-  font-family: 'Karla', sans-serif;
-  src: url('https://fonts.googleapis.com/css?family=Karla') format('opentype');
-  font-weight: 300;
-}
+@import url('https://fonts.googleapis.com/css?family=Karla');
 
 body,
 html {

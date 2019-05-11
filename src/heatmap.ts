@@ -9,6 +9,8 @@ export default class Heatmap {
   boxSize: number;
   xLabels: string[];
   yLabels: string[];
+  animate: boolean;
+  data: number[][];
   private chartWith: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
@@ -29,6 +31,8 @@ export default class Heatmap {
     this.boxSize = properties.boxSize;
     this.xLabels = properties.xLabels;
     this.yLabels = properties.yLabels;
+    this.animate = properties.animate;
+    this.data = properties.data;
     this.chartWith = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
   }
@@ -73,22 +77,36 @@ export default class Heatmap {
       .attr('height', this.height + this.margin.top + this.margin.bottom);
   }
 
-  private generateBoxes(data: number[][]): void {
-    const boxes = this.svg
+  private generateBoxes(): void {
+    let boxes = this.svg
       .select('.chart-group')
       .selectAll('.box')
-      .data(data);
+      .data(this.data);
 
-    boxes
+    const a = boxes
       .enter()
       .append('rect')
       .attr('width', this.boxSize)
       .attr('height', this.boxSize)
       .attr('y', (d) => d[0] * this.boxSize)
       .attr('x', (d) => d[1] * this.boxSize)
-      .style('fill', (d) => this.colorScale(d[2]))
+      // @ts-ignore
+      .merge(boxes)
+      .style('stroke', '#FFFFFF')
+      .style('stroke-width', 2)
+      .style('fill', 'gray')
       .classed('box', true);
 
+    if (this.animate) {
+      const duration = 2000;
+      a.style('opacity', 0.2)
+        .transition()
+        .duration(duration)
+        .style('fill', (d) => this.colorScale(d[2]))
+        .style('opacity', 1);
+    } else {
+      a.style('fill', (d) => this.colorScale(d[2]));
+    }
     boxes.exit().remove();
   }
 
@@ -135,13 +153,16 @@ export default class Heatmap {
     );
   }
 
-  public make(selector: string, data: number[][]): void {
-    const daysOfWeek = data.map((elt) => elt[0]);
-    const hoursOfDay = data.map((elt) => elt[1]);
-    const values = data.map((elt) => elt[2]);
+  public make(selector: string): void {
+    const values = this.data.map((elt) => elt[2]);
     this.colorScale = this.generateColorScale(values);
     this.buildSVG(selector);
-    this.generateBoxes(data);
+    this.generateBoxes();
     this.generateLabels();
+  }
+
+  public update(data: number[][]): void {
+    this.data = data;
+    this.generateBoxes();
   }
 }

@@ -3,8 +3,10 @@ export interface HeatmapProperties {
   height: number;
   margin: Margin;
   boxSize: number;
+  animate: boolean;
   xLabels: string[];
   yLabels: string[];
+  data: number[][];
 }
 
 export interface Margin {

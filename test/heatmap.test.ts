@@ -1,4 +1,5 @@
 import main from '../src/index';
+import data from '../test/fixtures/data.json';
 
 beforeEach(() => {
   const d = document.createElement('div');
@@ -12,7 +13,7 @@ afterEach(function() {
 
 describe('Rendering the heatmap', () => {
   beforeEach(() => {
-    main();
+    main(data);
   });
 
   it('should render one heat map', () => {

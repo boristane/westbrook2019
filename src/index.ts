@@ -2,7 +2,9 @@ import Heatmap from '../src/heatmap';
 import { Margin, HeatmapProperties } from '../src/types';
 import data from '../test/fixtures/data.json';
 
-export default function main() {
+let heatmap: Heatmap;
+
+export default function main(data: number[][]): void {
   const daysHuman = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
   const hoursHuman = [
     '00h',
@@ -45,9 +47,20 @@ export default function main() {
     boxSize: 30,
     xLabels: hoursHuman,
     yLabels: daysHuman,
+    animate: true,
+    data,
   };
-  const heatmapChart = new Heatmap(mapProperties);
-  heatmapChart.make('.container', data);
+  heatmap = new Heatmap(mapProperties);
+  heatmap.make('.container');
 }
 
-main();
+main(data);
+
+setInterval(() => {
+  const d = data.map((elt) => [
+    elt[0],
+    elt[1],
+    elt[2] + Math.random() * (Math.random() < 0.5 ? 20 : -20),
+  ]);
+  heatmap.update(d);
+}, 1000);
