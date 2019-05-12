@@ -68,11 +68,11 @@ export default function main(rawData: number[][]): void {
 
 main(rawData);
 
-setInterval(() => {
-  const d = rawData.map((d) => ({
-    x: d[1],
-    y: d[0],
-    value: d[2] + Math.random() * (Math.random() < 0.5 ? 50 : -50),
-  }));
-  heatmap.update(d);
-}, 1000);
+// setInterval(() => {
+//   const d = rawData.map((d) => ({
+//     x: d[1],
+//     y: d[0],
+//     value: d[2] + Math.random() * (Math.random() < 0.5 ? 50 : -50),
+//   }));
+//   heatmap.update(d);
+// }, 1000);

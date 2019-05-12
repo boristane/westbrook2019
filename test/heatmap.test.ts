@@ -48,4 +48,9 @@ describe('Rendering the heatmap', () => {
     const expected = 24;
     expect(actual).toEqual(expected);
   });
+
+  it('should render a tooltip', () => {
+    const actual = document.querySelectorAll('.container .tooltip').length;
+    expect(actual).toEqual(1);
+  });
 });

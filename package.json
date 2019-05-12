@@ -1,16 +1,16 @@
 {
-  "name": "westbrook2019",
+  "name": "data-vis",
   "version": "1.0.0",
-  "description": "An analysis of Russel Westbrook 2019 season ",
+  "description": "Data visualisation bundle",
   "main": "index.ts",
   "scripts": {
     "watch": "tsc --watch",
     "test": "npx jest",
-    "start": "npx parcel index.html"
+    "start": "npx parcel-bundler index.html"
   },
   "keywords": [
-    "westbrook",
-    "nba"
+    "data",
+    "visualisation"
   ],
   "author": "Boris Tane",
   "license": "ISC",
@@ -19,7 +19,7 @@
     "@types/jest": "^24.0.12",
     "@types/node": "^12.0.0",
     "jest": "^24.8.0",
-    "parcel": "^1.12.3",
+    "parcel-bundler": "^1.12.3",
     "prettier": "^1.17.0",
     "puppeteer": "^1.15.0",
     "ts-jest": "^24.0.2",

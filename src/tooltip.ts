@@ -16,7 +16,6 @@ export default class Tooltip {
   public show(html: string, x: number, y: number): void {
     const duration = 500;
     const tip = this.container.selectAll('.tip').data([html]);
-    const event = d3.event;
     setTimeout(() => {
       tip
         .enter()
@@ -39,7 +38,6 @@ export default class Tooltip {
 
   public hide(): void {
     const duration = 500;
-    console.log('hidin');
     this.container
       .transition()
       .duration(duration)

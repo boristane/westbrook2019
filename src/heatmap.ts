@@ -98,6 +98,38 @@ export default class Heatmap {
       .attr('height', this.height + this.margin.top + this.margin.bottom);
   }
 
+  private handleMouseOver(
+    d: { x: number; y: number; value: number },
+    index: number,
+    boxes: Selection<any, any, any, any>,
+  ) {
+    const x = d.x * this.boxSize + this.svg.node().getBoundingClientRect().left;
+    const y = d.y * this.boxSize + this.svg.node().getBoundingClientRect().top;
+    this.tooltip.show(this.transformForTooltip(d), x, y);
+
+    const box = boxes[index];
+    d3.select(box)
+      .transition()
+      .ease(d3.easeElastic)
+      .duration(300)
+      .style('stroke-width', this.strokeWidth + 1);
+  }
+
+  private handleMouseOut(
+    d: { x: number; y: number; value: number },
+    index: number,
+    boxes: Selection<any, any, any, any>,
+  ) {
+    this.tooltip.hide();
+
+    const box = boxes[index];
+    d3.select(box)
+      .transition()
+      .ease(d3.easeElastic)
+      .duration(300)
+      .style('stroke-width', this.strokeWidth);
+  }
+
   private generateBoxes(): void {
     let boxes = this.svg
       .select('.chart-group')
@@ -117,18 +149,8 @@ export default class Heatmap {
       .style('stroke-width', this.strokeWidth)
       .style('fill', 'gray')
       .classed('box', true)
-      .on('mouseover', (d) => {
-        const x =
-          d.x * this.boxSize + this.svg.node().getBoundingClientRect().left;
-        const y =
-          d.y * this.boxSize + this.svg.node().getBoundingClientRect().top;
-        return this.tooltip.show.bind(this.tooltip)(
-          this.transformForTooltip(d),
-          x,
-          y,
-        );
-      })
-      .on('mouseout', this.tooltip.hide.bind(this.tooltip));
+      .on('mouseover', this.handleMouseOver.bind(this))
+      .on('mouseout', this.handleMouseOut.bind(this));
 
     if (this.animate) {
       const duration = 2000;
