@@ -8,28 +8,30 @@ export default class Tooltip {
       .select(selector)
       .append('div')
       .classed('tooltip', true)
-      .style('position', 'absolute');
+      .style('position', 'absolute')
+      .style('pointer-events', 'none')
+      .style('left', '-10000000px')
+      .style('top', '-10000000px');
   }
-  public show(data: number[]): void {
+  public show(html: string, x: number, y: number): void {
     const duration = 500;
-    const tip = this.container.selectAll('.tip').data([data]);
+    const tip = this.container.selectAll('.tip').data([html]);
     const event = d3.event;
     setTimeout(() => {
       tip
         .enter()
-        .append('text')
+        .append('div')
         // @ts-ignore
         .merge(tip)
-        .text((d) => d[2])
-        .classed('tip', true)
-        .transition();
+        .html((d) => d)
+        .classed('tip', true);
 
       this.container
         .transition()
         .duration(duration)
         .style('opacity', 1)
-        .style('left', event.pageX + 'px')
-        .style('top', event.pageY - 28 + 'px');
+        .style('left', x + 'px')
+        .style('top', y - 30 + 'px');
 
       tip.exit().remove();
     }, duration);
@@ -37,6 +39,7 @@ export default class Tooltip {
 
   public hide(): void {
     const duration = 500;
+    console.log('hidin');
     this.container
       .transition()
       .duration(duration)

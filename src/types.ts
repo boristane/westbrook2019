@@ -5,9 +5,11 @@ export interface HeatmapProperties {
   animate?: boolean;
   xLabels: string[];
   yLabels: string[];
-  data: number[][];
+  data: { x: number; y: number; value: number }[];
   strokeWidth?: number;
   colorSchema?: string[];
+  dataUnit?: string;
+  dataFormat?: (value: number) => string;
 }
 
 export interface Margin {

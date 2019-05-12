@@ -1,10 +1,10 @@
 import Heatmap from '../src/heatmap';
 import { Margin, HeatmapProperties } from '../src/types';
-import data from '../test/fixtures/data.json';
+import rawData from '../test/fixtures/data.json';
 
 let heatmap: Heatmap;
 
-export default function main(data: number[][]): void {
+export default function main(rawData: number[][]): void {
   const daysHuman = [
     'Monday',
     'Tuesday',
@@ -40,7 +40,11 @@ export default function main(data: number[][]): void {
     '22h',
     '23h',
   ];
-  const hourLabelHeight = 20;
+  const data = rawData.map((d) => ({
+    x: d[1],
+    y: d[0],
+    value: d[2],
+  }));
   const margin: Margin = {
     top: 10,
     bottom: 10,
@@ -55,19 +59,20 @@ export default function main(data: number[][]): void {
     xLabels: hoursHuman,
     yLabels: daysHuman,
     data,
-    colorSchema: ['green', 'red'],
+    dataUnit: 'Sale(s)',
+    dataFormat: (value: number) => `${Math.round(value)}`,
   };
   heatmap = new Heatmap(mapProperties);
   heatmap.make('.container');
 }
 
-main(data);
+main(rawData);
 
 setInterval(() => {
-  const d = data.map((elt) => [
-    elt[0],
-    elt[1],
-    elt[2] + Math.random() * (Math.random() < 0.5 ? 50 : -50),
-  ]);
+  const d = rawData.map((d) => ({
+    x: d[1],
+    y: d[0],
+    value: d[2] + Math.random() * (Math.random() < 0.5 ? 50 : -50),
+  }));
   heatmap.update(d);
 }, 1000);

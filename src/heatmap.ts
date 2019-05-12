@@ -12,7 +12,9 @@ export default class Heatmap {
   yLabels: string[];
   animate: boolean;
   strokeWidth: number;
-  data: number[][];
+  data: { x: number; y: number; value: number }[];
+  dataUnit: string;
+  dataFormat: (value: number) => string;
   private chartWith: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
@@ -20,6 +22,7 @@ export default class Heatmap {
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private colorScale: ScaleLinear<string, string>;
   private tooltip: Tooltip;
+  private boxes;
 
   constructor(properties: HeatmapProperties) {
     this.width = properties.width;
@@ -29,12 +32,17 @@ export default class Heatmap {
     this.yLabels = properties.yLabels;
     this.animate = properties.animate || true;
     this.data = properties.data;
+    this.dataUnit = properties.dataUnit || '';
+    this.dataFormat = (a) => `${a}`;
+    if (properties.dataFormat) {
+      this.dataFormat = properties.dataFormat;
+    }
     this.chartWith = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
     this.strokeWidth = properties.strokeWidth || 2;
     this.colorSchema = properties.colorSchema || ['#C0FFE7', '#479980'];
-    const numLines = Math.max(...this.data.map((elt) => elt[1]));
-    const numColumns = Math.max(...this.data.map((elt) => elt[0]));
+    const numLines = Math.max(...this.data.map((elt) => elt.x));
+    const numColumns = Math.max(...this.data.map((elt) => elt.y));
     const boxSizeToFitWidth = Math.floor(
       this.chartWith / numLines - 2 * this.strokeWidth,
     );
@@ -101,15 +109,25 @@ export default class Heatmap {
       .append('rect')
       .attr('width', this.boxSize)
       .attr('height', this.boxSize)
-      .attr('y', (d) => d[0] * this.boxSize)
-      .attr('x', (d) => d[1] * this.boxSize)
+      .attr('y', (d) => d.y * this.boxSize)
+      .attr('x', (d) => d.x * this.boxSize)
       // @ts-ignore
       .merge(boxes)
       .style('stroke', '#FFFFFF')
       .style('stroke-width', this.strokeWidth)
       .style('fill', 'gray')
       .classed('box', true)
-      .on('mouseover', this.tooltip.show.bind(this.tooltip))
+      .on('mouseover', (d) => {
+        const x =
+          d.x * this.boxSize + this.svg.node().getBoundingClientRect().left;
+        const y =
+          d.y * this.boxSize + this.svg.node().getBoundingClientRect().top;
+        return this.tooltip.show.bind(this.tooltip)(
+          this.transformForTooltip(d),
+          x,
+          y,
+        );
+      })
       .on('mouseout', this.tooltip.hide.bind(this.tooltip));
 
     if (this.animate) {
@@ -117,12 +135,25 @@ export default class Heatmap {
       a.style('opacity', 0.2)
         .transition()
         .duration(duration)
-        .style('fill', (d) => this.colorScale(d[2]))
+        .style('fill', (d) => this.colorScale(d.value))
         .style('opacity', 1);
     } else {
-      a.style('fill', (d) => this.colorScale(d[2]));
+      a.style('fill', (d) => this.colorScale(d.value));
     }
     boxes.exit().remove();
+    this.boxes = boxes;
+  }
+
+  private transformForTooltip(data: { x: number; y: number; value: number }) {
+    return `
+      <p>
+        <span>(${this.yLabels[data.y]}, ${
+      this.xLabels[data.x]
+    })</span> <span style="font-weight: bold">${this.dataFormat(data.value)} ${
+      this.dataUnit
+    }</span>
+        </p>
+    `;
   }
 
   private generateLabels() {
@@ -144,7 +175,7 @@ export default class Heatmap {
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'x-label');
-    const numLines = Math.max(...this.data.map((elt) => elt[0]));
+    const numLines = Math.max(...this.data.map((elt) => elt.y));
     const yOffset = (this.boxSize + 2 * this.strokeWidth) * numLines;
     xLabelsGroup.attr(
       'transform',
@@ -175,7 +206,7 @@ export default class Heatmap {
   }
 
   public make(selector: string): void {
-    const values = this.data.map((elt) => elt[2]);
+    const values = this.data.map((elt) => elt.value);
     this.colorScale = this.generateColorScale(values);
     this.buildSVG(selector);
     this.tooltip = new Tooltip(selector);
@@ -183,8 +214,14 @@ export default class Heatmap {
     this.generateLabels();
   }
 
-  public update(data: number[][]): void {
+  public update(data: { x: number; y: number; value: number }[]): void {
     this.data = data;
+    const values = this.data.map((elt) => elt.value);
+    this.colorScale = this.generateColorScale(values);
     this.generateBoxes();
+  }
+
+  public getBoxes() {
+    return this.boxes;
   }
 }

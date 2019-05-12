@@ -1,32 +1,16 @@
 @import url('https://fonts.googleapis.com/css?family=Karla');
 
-body,
-html {
+.heatmap {
   font-family: 'Karla', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-main {
-  padding: 40px 60px;
-}
-
-header {
-  margin-bottom: 20px;
-}
-h1 {
-  color: #282c35;
-  font-weight: 300;
-  margin-bottom: 5px;
-}
-p {
-  margin-top: 0;
-  font-style: italic;
-  color: #363a43;
-}
-
-.heatmap {
-}
-.day-label,
-.hour-label {
-  fill: #666a73;
+.tooltip {
+  font-family: 'Karla', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 5px;
 }
