@@ -112,7 +112,10 @@ export default class Heatmap {
       .transition()
       .ease(d3.easeElastic)
       .duration(300)
-      .style('stroke-width', this.strokeWidth + 1);
+      .attr('width', parseFloat(box.getAttribute('width')) - 1)
+      .attr('x', parseFloat(box.getAttribute('x')) + 0.5)
+      .attr('height', parseFloat(box.getAttribute('height')) - 1)
+      .attr('y', parseFloat(box.getAttribute('y')) + 0.5);
   }
 
   private handleMouseOut(
@@ -127,10 +130,14 @@ export default class Heatmap {
       .transition()
       .ease(d3.easeElastic)
       .duration(300)
-      .style('stroke-width', this.strokeWidth);
+      .attr('width', parseFloat(box.getAttribute('width')) + 1)
+      .attr('x', parseFloat(box.getAttribute('x')) - 0.5)
+      .attr('height', parseFloat(box.getAttribute('height')) + 1)
+      .attr('y', parseFloat(box.getAttribute('y')) - 0.5);
   }
 
   private generateBoxes(): void {
+    const boxRadius = this.boxSize / 8;
     let boxes = this.svg
       .select('.chart-group')
       .selectAll('.box')
@@ -143,6 +150,7 @@ export default class Heatmap {
       .attr('height', this.boxSize)
       .attr('y', (d) => d.y * this.boxSize)
       .attr('x', (d) => d.x * this.boxSize)
+      .attr('rx', boxRadius)
       // @ts-ignore
       .merge(boxes)
       .style('stroke', '#FFFFFF')
@@ -198,12 +206,11 @@ export default class Heatmap {
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'x-label');
     const numLines = Math.max(...this.data.map((elt) => elt.y));
-    const yOffset = (this.boxSize + 2 * this.strokeWidth) * numLines;
+    const yOffset = this.boxSize * (numLines + 1.5);
     xLabelsGroup.attr(
       'transform',
       `translate(${this.boxSize / 2 +
-        (maxYLabelLength * this.fontSize * 4) / 5}, ${yOffset +
-        this.fontSize})`,
+        (maxYLabelLength * this.fontSize * 4) / 5}, ${yOffset})`,
     );
 
     const yLabelsGroup = this.svg.select('.y-label-group');
@@ -221,10 +228,7 @@ export default class Heatmap {
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'y-label');
-    yLabelsGroup.attr(
-      'transform',
-      `translate(${this.fontSize / 2}, ${this.boxSize / 2})`,
-    );
+    yLabelsGroup.attr('transform', `translate(0, ${this.boxSize / 2})`);
   }
 
   public make(selector: string): void {
