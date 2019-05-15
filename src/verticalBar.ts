@@ -156,6 +156,7 @@ export default class VerticalBarChart {
       a.transition()
         .duration(duration)
         .attr('y', (d) => this.yScale(d.value))
+        .attr('x', (d) => this.xScale(d.label))
         .attr('height', (d) => this.chartHeight - this.yScale(d.value));
     }
 
@@ -201,8 +202,8 @@ export default class VerticalBarChart {
 
     this.yScale.domain([0, Math.max(...this.data.map((a) => a.value))]);
     if (this.order) {
-      this.data.sort((a, b) => a.value - b.value);
-      this.xScale.domain(this.data.map((b) => b.label)).padding(0.1);
+      const a = this.data.slice().sort((a, b) => a.value - b.value);
+      this.xScale.domain(a.map((b) => b.label)).padding(0.1);
       this.svg
         .select('.x-label-group')
         .transition()
