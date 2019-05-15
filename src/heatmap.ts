@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 
-import { HeatmapProperties, Margin } from './types';
+import { IHeatmapProperties, IMargin } from './types';
 import { ScaleLinear, Selection } from 'd3';
 
 import Tooltip from './tooltip';
@@ -8,7 +8,7 @@ import Tooltip from './tooltip';
 export default class Heatmap {
   width: number;
   height: number;
-  margin: Margin;
+  margin: IMargin;
   boxSize: number;
   xLabels: string[];
   yLabels: string[];
@@ -26,7 +26,7 @@ export default class Heatmap {
   private tooltip: Tooltip;
   private boxes;
 
-  constructor(properties: HeatmapProperties) {
+  constructor(properties: IHeatmapProperties) {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;

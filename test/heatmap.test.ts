@@ -1,4 +1,4 @@
-import { HeatmapProperties, Margin } from '../src/types';
+import { IHeatmapProperties, IMargin } from '../src/types';
 
 import Heatmap from '../src/heatmap';
 import data from '../test/fixtures/data.json';
@@ -44,14 +44,14 @@ function main(rawData: number[][]): void {
     y: d[0],
     value: d[2],
   }));
-  const margin: Margin = {
+  const margin: IMargin = {
     top: 10,
     bottom: 10,
     left: 10,
     right: 10,
   };
 
-  const mapProperties: HeatmapProperties = {
+  const mapProperties: IHeatmapProperties = {
     width: 750,
     height: 250,
     margin,

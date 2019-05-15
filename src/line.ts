@@ -1,25 +1,26 @@
 import * as d3 from 'd3';
 
-import { IBarChartProperties, IMargin } from './types';
+import { IBarChartProperties, ILineChartProperties, IMargin } from './types';
 
 import { Selection } from 'd3';
 import Tooltip from './tooltip';
 
-export default class VerticalBarChart {
+export default class LineChart {
   width: number;
   height: number;
   margin: IMargin;
   animate: boolean;
   xScale;
   yScale;
-  bars: Selection<any, any, any, any>;
+  line: Selection<any, any, any, any>;
   numTicks: number;
-  data: Array<{ label: string; value: number }>;
+  data: Array<{ x: number; y: number }>;
   barWidth: number;
   dataUnit: string;
   order: boolean;
   color: string;
-  axisLabel: string;
+  xAxisLabel: string;
+  yAxisLabel: string;
   dataFormat: (value: number) => string;
   private chartWidth: number;
   private chartHeight: number;
@@ -27,7 +28,7 @@ export default class VerticalBarChart {
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private tooltip: Tooltip;
 
-  constructor(properties: IBarChartProperties) {
+  constructor(properties: ILineChartProperties) {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;
@@ -44,24 +45,23 @@ export default class VerticalBarChart {
     this.color = properties.color || '#C0FFE7';
     this.numTicks = properties.numTicks || 5;
     this.order = properties.order === undefined ? true : properties.order;
-    this.axisLabel = properties.axisLabel || '';
+    this.xAxisLabel = properties.xAxisLabel || '';
+    this.yAxisLabel = properties.yAxisLabel || '';
   }
 
   public make(selector: string): void {
     this.buildSVG(selector);
     this.tooltip = new Tooltip(selector);
     this.generateLabels();
-    this.generateBars();
+    this.generateLine();
   }
 
-  public update(data: Array<{ label: string; value: number }>): void {
+  public update(data: Array<{ x: number; y: number }>): void {
     this.data = data;
-    this.yScale.domain([0, Math.max(...this.data.map((a) => a.value))]);
+
+    this.yScale.domain([Math.min(...this.data.map((a) => a.y)), Math.max(...this.data.map((a) => a.y))]);
     if (this.order) {
-      const sortedData = this.data
-        .slice()
-        .sort((a, b) => a.value - b.value);
-      this.xScale.domain(sortedData.map((b) => b.label)).padding(0.1);
+      this.xScale.domain(this.data.map((b) => b.x));
       this.svg
         .select('.x-label-group')
         .transition()
@@ -75,7 +75,7 @@ export default class VerticalBarChart {
       // @ts-ignore
       .call(d3.axisLeft(this.yScale).ticks(this.numTicks));
 
-    this.generateBars();
+    this.generateLine();
   }
 
   private generateContainerGroups(): void {
@@ -135,72 +135,48 @@ export default class VerticalBarChart {
     `;
   }
 
-  private generateBars(): void {
-    const boxRadius = this.xScale.bandwidth() / 100;
-    const bars = this.svg
-      .select('.chart-group')
-      .selectAll('.bar')
-      .data(this.data);
+  private generateLine(): void {
+    this.data
+      .sort((a, b) => a.x - b.x);
+    const line = this.svg.select('.chart-group').append('g')
+      .attr('clip-path', 'url(#clip)')
 
-    const valueTexts = this.svg
-      .select('.chart-group')
-      .selectAll('.value')
-      .data(this.data);
+    // Add the line
+    const path = line.append('path')
+      .datum(this.data)
+      .attr('class', 'line')
+      .attr('fill', 'none')
+      .attr('stroke', 'steelblue')
+      .attr('stroke-width', 1.5)
+      .attr('d', d3.line()
+        .x((d) => this.xScale(d.x))
+        .y((d) => this.yScale(d.y))
+        .curve(d3.curveMonotoneX)
+      );
 
-    const a = bars
-      .enter()
-      .append('rect')
-      .attr('width', this.xScale.bandwidth())
-      .attr('x', (d) => this.xScale(d.label))
-      .attr('y', (d) => this.yScale(d.value))
-      .attr('height', (d) => this.chartHeight - this.yScale(d.value))
-      .attr('rx', boxRadius)
-      // @ts-ignore
-      .merge(bars)
-      .style('fill', this.color)
-      .classed('bar', true)
-      .on('mouseover', this.handleMouseOver.bind(this))
-      .on('mouseout', this.handleMouseOut.bind(this));
-
-    const b = valueTexts.enter()
-      .append('text')
-      .attr('x', (d) => this.xScale(d.label) + this.xScale.bandwidth() / 2)
-      .attr('y', this.chartHeight - 20)
-      .text((d) => this.dataFormat(d.value))
-      // @ts-ignore
-      .merge(valueTexts)
-      .style('text-anchor', 'middle')
-      .style('dominant-baseline', 'central')
-      .style('font-size', () => `${1.5 * this.fontSize}px`)
-      .attr('fill', 'grey')
-      .style('font-weight', 'bold')
-      .classed('value', true);
 
     if (this.animate) {
       const duration = 1000;
-      a.transition()
+      path.transition()
         .duration(duration)
-        .attr('y', (d) => this.yScale(d.value))
-        .attr('x', (d) => this.xScale(d.label))
-        .attr('height', (d) => this.chartHeight - this.yScale(d.value));
-
-      b.transition()
-        .duration(duration)
-        .attr('x', (d) => this.xScale(d.label) + this.xScale.bandwidth() / 2)
-        .text((d, i) => this.dataFormat(d.value));
+        .attr('d', d3.line()
+          .x((d) => this.xScale(d.x))
+          .y((d) => this.yScale(d.y))
+          .curve(d3.curveMonotoneX)
+        );
     }
 
-    bars.exit().remove();
-    valueTexts.exit().remove();
-    this.bars = bars;
+    line.exit().remove();
+    this.line = line;
   }
 
   private generateLabels() {
+    const xData = this.data.map((b) => b.x);
+    const yData = this.data.map((b) => b.y);
     this.xScale = d3
-      .scaleBand()
-      .rangeRound([0, this.chartWidth - 20])
-      .domain(this.data.map((b) => b.label))
-      .padding(0.1);
+      .scaleLinear()
+      .range([0, this.chartWidth - 20])
+      .domain([Math.min(...xData), Math.max(...xData)]);
 
     this.svg
       .select('.x-label-group')
@@ -211,8 +187,8 @@ export default class VerticalBarChart {
 
     this.yScale = d3
       .scaleLinear()
-      .rangeRound([this.chartHeight, 0])
-      .domain([0, Math.max(...this.data.map((a) => a.value))]);
+      .range([this.chartHeight, 0])
+      .domain([Math.min(...yData), Math.max(...yData)]);
 
     this.svg
       .select('.y-label-group')
@@ -224,10 +200,21 @@ export default class VerticalBarChart {
       .append('text')
       .attr('x', 0)
       .attr('y', 0)
-      .text(this.axisLabel)
+      .text(this.yAxisLabel)
       .style('text-anchor', 'middle')
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('transform', `translate(${10}, ${this.chartHeight / 2}) rotate(-90)`);
+
+    this.svg
+      .select('.chart-group')
+      .append('text')
+      .attr('x', 0)
+      .attr('y', 0)
+      .text(this.xAxisLabel)
+      .style('text-anchor', 'middle')
+      .style('dominant-baseline', 'central')
+      .style('font-size', () => `${this.fontSize}px`)
+      .attr('transform', `translate(${this.chartWidth / 2}, ${this.height + this.margin.bottom / 2})`);
   }
 }

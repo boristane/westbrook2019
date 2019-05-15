@@ -1,4 +1,6 @@
-import main from '../src/index';
+import { IBarChartProperties, IMargin } from '../src/types';
+
+import VerticalBarChart from '../src/verticalBar';
 
 beforeEach(() => {
   const d = document.createElement('div');
@@ -34,6 +36,29 @@ describe('Rendering the heatmap', () => {
       label: day,
       value: values[index],
     }));
+    let chart: VerticalBarChart;
+    function main(rawData: Array<{ label: string; value: number }>): void {
+      const margin: IMargin = {
+        top: 10,
+        bottom: 10,
+        left: 10,
+        right: 10,
+      };
+      const data = rawData;
+      const mapProperties: IBarChartProperties = {
+        width: 550,
+        height: 750,
+        margin,
+        data,
+        order: true,
+        dataUnit: 'Sale(s)',
+        numTicks: 5,
+        dataFormat: (value: number) => `${Math.round(value)}`,
+      };
+      chart = new VerticalBarChart(mapProperties);
+      chart.make('.container');
+    }
+
     main(data);
   });
 
