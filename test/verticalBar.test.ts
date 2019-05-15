@@ -1,68 +1,5 @@
+import main from '../src/index';
 import data from '../test/fixtures/data.json';
-import Heatmap from '../src/heatmap';
-import { Margin, HeatmapProperties } from '../src/types';
-
-function main(rawData: number[][]): void {
-  const daysHuman = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-  const hoursHuman = [
-    '00h',
-    '01h',
-    '02h',
-    '03h',
-    '04h',
-    '05h',
-    '06h',
-    '07h',
-    '08h',
-    '09h',
-    '10h',
-    '11h',
-    '12h',
-    '13h',
-    '14h',
-    '15h',
-    '16h',
-    '17h',
-    '18h',
-    '19h',
-    '20h',
-    '21h',
-    '22h',
-    '23h',
-  ];
-  const data = rawData.map((d) => ({
-    x: d[1],
-    y: d[0],
-    value: d[2],
-  }));
-  const margin: Margin = {
-    top: 10,
-    bottom: 10,
-    left: 10,
-    right: 10,
-  };
-
-  const mapProperties: HeatmapProperties = {
-    width: 750,
-    height: 250,
-    margin,
-    xLabels: hoursHuman,
-    yLabels: daysHuman,
-    data,
-    dataUnit: 'Sale(s)',
-    dataFormat: (value: number) => `${Math.round(value)}`,
-  };
-  const heatmap = new Heatmap(mapProperties);
-  heatmap.make('.container');
-}
 
 beforeEach(() => {
   const d = document.createElement('div');
@@ -79,15 +16,10 @@ describe('Rendering the heatmap', () => {
     main(data);
   });
 
-  it('should render one heat map', () => {
+  it('should render one bar chart', () => {
     const expected = 1;
     const actual = document.querySelectorAll('.heatmap').length;
     expect(actual).toEqual(expected);
-  });
-
-  it('should render a square for each hour of the week', () => {
-    const actual = document.querySelectorAll('.heatmap .box').length;
-    expect(actual).toEqual(24 * 7);
   });
 
   it('should create a container and a chart groups', () => {
