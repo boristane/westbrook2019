@@ -1,6 +1,8 @@
 import * as d3 from 'd3';
-import { Selection, ScaleLinear } from 'd3';
+
 import { HeatmapProperties, Margin } from './types';
+import { ScaleLinear, Selection } from 'd3';
+
 import Tooltip from './tooltip';
 
 export default class Heatmap {
@@ -12,13 +14,13 @@ export default class Heatmap {
   yLabels: string[];
   animate: boolean;
   strokeWidth: number;
-  data: { x: number; y: number; value: number }[];
+  data: Array<{ x: number; y: number; value: number }>;
   dataUnit: string;
   dataFormat: (value: number) => string;
   private chartWith: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
-  colorSchema: string[];
+  private colorSchema: string[];
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private colorScale: ScaleLinear<string, string>;
   private tooltip: Tooltip;
@@ -50,6 +52,26 @@ export default class Heatmap {
       this.chartHeight / numColumns - 2 * this.strokeWidth,
     );
     this.boxSize = Math.min(boxSizeToFitWidth, boxSizeToFitHeight);
+  }
+
+  public make(selector: string): void {
+    const values = this.data.map((elt) => elt.value);
+    this.colorScale = this.generateColorScale(values);
+    this.buildSVG(selector);
+    this.tooltip = new Tooltip(selector);
+    this.generateBoxes();
+    this.generateLabels();
+  }
+
+  public update(data: Array<{ x: number; y: number; value: number }>): void {
+    this.data = data;
+    const values = this.data.map((elt) => elt.value);
+    this.colorScale = this.generateColorScale(values);
+    this.generateBoxes();
+  }
+
+  public getBoxes() {
+    return this.boxes;
   }
 
   private generateContainerGroups(): void {
@@ -138,7 +160,7 @@ export default class Heatmap {
 
   private generateBoxes(): void {
     const boxRadius = this.boxSize / 8;
-    let boxes = this.svg
+    const boxes = this.svg
       .select('.chart-group')
       .selectAll('.box')
       .data(this.data);
@@ -179,9 +201,9 @@ export default class Heatmap {
       <p>
         <span>(${this.yLabels[data.y]}, ${
       this.xLabels[data.x]
-    })</span> <span style="font-weight: bold">${this.dataFormat(data.value)} ${
+      })</span> <span style="font-weight: bold">${this.dataFormat(data.value)} ${
       this.dataUnit
-    }</span>
+      }</span>
         </p>
     `;
   }
@@ -210,7 +232,7 @@ export default class Heatmap {
     xLabelsGroup.attr(
       'transform',
       `translate(${this.boxSize / 2 +
-        (maxYLabelLength * this.fontSize * 4) / 5}, ${yOffset})`,
+      (maxYLabelLength * this.fontSize * 4) / 5}, ${yOffset})`,
     );
 
     const yLabelsGroup = this.svg.select('.y-label-group');
@@ -229,25 +251,5 @@ export default class Heatmap {
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'y-label');
     yLabelsGroup.attr('transform', `translate(0, ${this.boxSize / 2})`);
-  }
-
-  public make(selector: string): void {
-    const values = this.data.map((elt) => elt.value);
-    this.colorScale = this.generateColorScale(values);
-    this.buildSVG(selector);
-    this.tooltip = new Tooltip(selector);
-    this.generateBoxes();
-    this.generateLabels();
-  }
-
-  public update(data: { x: number; y: number; value: number }[]): void {
-    this.data = data;
-    const values = this.data.map((elt) => elt.value);
-    this.colorScale = this.generateColorScale(values);
-    this.generateBoxes();
-  }
-
-  public getBoxes() {
-    return this.boxes;
   }
 }

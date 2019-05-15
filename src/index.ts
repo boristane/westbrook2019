@@ -1,8 +1,8 @@
-import { Margin, HeatmapProperties, BarChartProperties } from '../src/types';
-import rawData from '../test/fixtures/data.json';
+import { BarChartProperties, HeatmapProperties, Margin } from '../src/types';
+
 import VerticalBarChart from './verticalBar';
 
-let heatmap: VerticalBarChart;
+let chart: VerticalBarChart;
 
 const daysHuman = [
   'Monday',
@@ -13,19 +13,19 @@ const daysHuman = [
   'Saturday',
   'Sunday',
 ];
-const data = daysHuman.map((day) => ({
+const rawData = daysHuman.map((day) => ({
   label: day,
   value: Math.random() * 15,
 }));
 
-export default function main(rawData: number[][]): void {
+export default function main(rawData: Array<{ label: string; value: number }>): void {
   const margin: Margin = {
     top: 10,
     bottom: 10,
     left: 10,
     right: 10,
   };
-
+  const data = rawData;
   const mapProperties: BarChartProperties = {
     width: 550,
     height: 750,
@@ -33,10 +33,11 @@ export default function main(rawData: number[][]): void {
     data,
     order: true,
     dataUnit: 'Sale(s)',
+    numTicks: 5,
     dataFormat: (value: number) => `${Math.round(value)}`,
   };
-  heatmap = new VerticalBarChart(mapProperties);
-  heatmap.make('.container');
+  chart = new VerticalBarChart(mapProperties);
+  chart.make('.container');
 }
 
 main(rawData);
@@ -46,5 +47,5 @@ setInterval(() => {
     label: day,
     value: Math.random() * 300,
   }));
-  heatmap.update(d);
+  chart.update(d);
 }, 1000);

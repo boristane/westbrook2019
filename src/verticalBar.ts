@@ -1,6 +1,8 @@
 import * as d3 from 'd3';
-import { Selection, ScaleLinear } from 'd3';
-import { HeatmapProperties, Margin, BarChartProperties } from './types';
+
+import { BarChartProperties, HeatmapProperties, Margin } from './types';
+import { ScaleLinear, Selection } from 'd3';
+
 import Tooltip from './tooltip';
 
 export default class VerticalBarChart {
@@ -12,15 +14,15 @@ export default class VerticalBarChart {
   yScale;
   bars: Selection<any, any, any, any>;
   numTicks: number;
-  data: { label: string; value: number }[];
+  data: Array<{ label: string; value: number }>;
   barWidth: number;
   dataUnit: string;
   order: boolean;
+  color: string;
   dataFormat: (value: number) => string;
   private chartWidth: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
-  color: string;
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private tooltip: Tooltip;
 
@@ -41,6 +43,38 @@ export default class VerticalBarChart {
     this.color = properties.color || '#C0FFE7';
     this.numTicks = properties.numTicks || 5;
     this.order = properties.order === undefined ? true : properties.order;
+  }
+
+  public make(selector: string): void {
+    this.buildSVG(selector);
+    this.tooltip = new Tooltip(selector);
+    this.generateLabels();
+    this.generateBars();
+  }
+
+  public update(data: Array<{ label: string; value: number }>): void {
+    this.data = data;
+
+    this.yScale.domain([0, Math.max(...this.data.map((a) => a.value))]);
+    if (this.order) {
+      const sortedData = this.data
+        .slice()
+        .sort((a, b) => a.value - b.value);
+      this.xScale.domain(sortedData.map((b) => b.label)).padding(0.1);
+      this.svg
+        .select('.x-label-group')
+        .transition()
+        // @ts-ignore
+        .call(d3.axisBottom(this.xScale));
+    }
+
+    this.svg
+      .select('.y-label-group')
+      .transition()
+      // @ts-ignore
+      .call(d3.axisLeft(this.yScale).ticks(this.numTicks));
+
+    this.generateBars();
   }
 
   private generateContainerGroups(): void {
@@ -131,7 +165,7 @@ export default class VerticalBarChart {
 
   private generateBars(): void {
     const boxRadius = this.xScale.bandwidth() / 100;
-    let bars = this.svg
+    const bars = this.svg
       .select('.chart-group')
       .selectAll('.bar')
       .data(this.data);
@@ -187,36 +221,6 @@ export default class VerticalBarChart {
       .select('.y-label-group')
       .append('g')
       .transition()
-      .call(d3.axisLeft(this.yScale).ticks(this.numTicks, 's'));
-  }
-
-  public make(selector: string): void {
-    this.buildSVG(selector);
-    this.tooltip = new Tooltip(selector);
-    this.generateLabels();
-    this.generateBars();
-  }
-
-  public update(data: { label: string; value: number }[]): void {
-    this.data = data;
-
-    this.yScale.domain([0, Math.max(...this.data.map((a) => a.value))]);
-    if (this.order) {
-      const a = this.data.slice().sort((a, b) => a.value - b.value);
-      this.xScale.domain(a.map((b) => b.label)).padding(0.1);
-      this.svg
-        .select('.x-label-group')
-        .transition()
-        // @ts-ignore
-        .call(d3.axisBottom(this.xScale));
-    }
-
-    this.svg
-      .select('.y-label-group')
-      .transition()
-      // @ts-ignore
-      .call(d3.axisLeft(this.yScale).ticks(this.numTicks, 's'));
-
-    this.generateBars();
+      .call(d3.axisLeft(this.yScale).ticks(this.numTicks));
   }
 }

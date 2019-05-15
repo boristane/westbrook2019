@@ -1,6 +1,7 @@
-import data from '../test/fixtures/data.json';
+import { HeatmapProperties, Margin } from '../src/types';
+
 import Heatmap from '../src/heatmap';
-import { Margin, HeatmapProperties } from '../src/types';
+import data from '../test/fixtures/data.json';
 
 function main(rawData: number[][]): void {
   const daysHuman = [
@@ -38,7 +39,7 @@ function main(rawData: number[][]): void {
     '22h',
     '23h',
   ];
-  const data = rawData.map((d) => ({
+  const dataset = rawData.map((d) => ({
     x: d[1],
     y: d[0],
     value: d[2],
@@ -56,7 +57,7 @@ function main(rawData: number[][]): void {
     margin,
     xLabels: hoursHuman,
     yLabels: daysHuman,
-    data,
+    data: dataset,
     dataUnit: 'Sale(s)',
     dataFormat: (value: number) => `${Math.round(value)}`,
   };
@@ -70,7 +71,7 @@ beforeEach(() => {
   document.body.appendChild(d);
 });
 
-afterEach(function() {
+afterEach(() => {
   document.body.removeChild(document.querySelector('.container'));
 });
 
