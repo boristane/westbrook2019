@@ -9,7 +9,6 @@ export default class LineChart {
   width: number;
   height: number;
   margin: IMargin;
-  animate: boolean;
   xScale;
   yScale;
   line: Selection<any, any, any, any>;
@@ -17,7 +16,6 @@ export default class LineChart {
   data: Array<{ x: number; y: number }>;
   barWidth: number;
   dataUnit: string;
-  order: boolean;
   color: string;
   xAxisLabel: string;
   yAxisLabel: string;
@@ -32,7 +30,6 @@ export default class LineChart {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;
-    this.animate = properties.animate || true;
     this.data = properties.data;
     this.dataUnit = properties.dataUnit || '';
     this.dataFormat = (a) => `${a}`;
@@ -44,31 +41,40 @@ export default class LineChart {
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
     this.color = properties.color || '#C0FFE7';
     this.numTicks = properties.numTicks || 5;
-    this.order = properties.order === undefined ? true : properties.order;
     this.xAxisLabel = properties.xAxisLabel || '';
     this.yAxisLabel = properties.yAxisLabel || '';
   }
 
   public make(selector: string): void {
+    this.data
+      .sort((a, b) => a.x - b.x);
     this.buildSVG(selector);
     this.tooltip = new Tooltip(selector);
     this.generateLabels();
     this.generateLine();
   }
 
-  public update(data: Array<{ x: number; y: number }>): void {
-    this.data = data;
+  public update(data: { x: number; y: number }): void {
+    this.data
+      .sort((a, b) => a.x - b.x);
+    const currentxMax = Math.max(...this.data.map((a) => a.x));
+    const curentxMin = Math.min(...this.data.map((a) => a.x));
+    const delatX = data.x - currentxMax;
+    while (this.data[0].x < curentxMin + delatX) {
+      this.data.shift();
+
+    }
+    this.data.push(data);
 
     this.yScale.domain([Math.min(...this.data.map((a) => a.y)), Math.max(...this.data.map((a) => a.y))]);
-    if (this.order) {
-      this.xScale.domain(this.data.map((b) => b.x));
-      this.svg
-        .select('.x-label-group')
-        .transition()
-        // @ts-ignore
-        .call(d3.axisBottom(this.xScale));
-    }
+    this.xScale.domain([delatX, Math.max(...this.data.map((a) => a.x))]);
 
+    this.svg
+      .select('.x-label-group')
+      .attr('transform', `translate(0, ${this.chartHeight})`)
+      .transition()
+      // @ts-ignore
+      .call(d3.axisBottom(this.xScale));
     this.svg
       .select('.y-label-group')
       .transition()
@@ -136,35 +142,30 @@ export default class LineChart {
   }
 
   private generateLine(): void {
-    this.data
-      .sort((a, b) => a.x - b.x);
-    const line = this.svg.select('.chart-group').append('g')
-      .attr('clip-path', 'url(#clip)')
+    const l = d3.line()
+      .x((d) => this.xScale(d.x))
+      .y((d) => this.yScale(d.y))
+      .curve(d3.curveBasis);
+    const line = this.svg.select('.chart-group').append('g').append('path').datum(this.data);
 
     // Add the line
-    const path = line.append('path')
-      .datum(this.data)
+    const path = line
+      .enter()
       .attr('class', 'line')
+      // ts-ignore
+      .merge(line)
       .attr('fill', 'none')
       .attr('stroke', 'steelblue')
       .attr('stroke-width', 1.5)
-      .attr('d', d3.line()
-        .x((d) => this.xScale(d.x))
-        .y((d) => this.yScale(d.y))
-        .curve(d3.curveMonotoneX)
-      );
+      // .attr('stroke', this.color)
+      .attr('d', l);
 
 
-    if (this.animate) {
-      const duration = 1000;
-      path.transition()
-        .duration(duration)
-        .attr('d', d3.line()
-          .x((d) => this.xScale(d.x))
-          .y((d) => this.yScale(d.y))
-          .curve(d3.curveMonotoneX)
-        );
-    }
+    const duration = 1000;
+    path.transition()
+      .duration(duration)
+      .attr('d', l);
+
 
     line.exit().remove();
     this.line = line;

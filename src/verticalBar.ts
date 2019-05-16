@@ -9,33 +9,32 @@ export default class VerticalBarChart {
   width: number;
   height: number;
   margin: IMargin;
-  animate: boolean;
   xScale;
   yScale;
   bars: Selection<any, any, any, any>;
   numTicks: number;
   data: Array<{ label: string; value: number }>;
-  barWidth: number;
   dataUnit: string;
   order: boolean;
   color: string;
   axisLabel: string;
+  duration: number;
+  delay: number;
   dataFormat: (value: number) => string;
   private chartWidth: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private tooltip: Tooltip;
+  private initialised: boolean = false;
 
   constructor(properties: IBarChartProperties) {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;
-    this.animate = properties.animate || true;
     this.data = properties.data;
     this.dataUnit = properties.dataUnit || '';
     this.dataFormat = (a) => `${a}`;
-    this.barWidth = 80;
     if (properties.dataFormat) {
       this.dataFormat = properties.dataFormat;
     }
@@ -45,6 +44,8 @@ export default class VerticalBarChart {
     this.numTicks = properties.numTicks || 5;
     this.order = properties.order === undefined ? true : properties.order;
     this.axisLabel = properties.axisLabel || '';
+    this.duration = properties.duration / 4 || 1000;
+    this.delay = this.duration / 2;
   }
 
   public make(selector: string): void {
@@ -52,10 +53,12 @@ export default class VerticalBarChart {
     this.tooltip = new Tooltip(selector);
     this.generateLabels();
     this.generateBars();
+    this.initialised = true;
   }
 
   public update(data: Array<{ label: string; value: number }>): void {
     this.data = data;
+    d3.selectAll('*').transition();
     this.yScale.domain([0, Math.max(...this.data.map((a) => a.value))]);
     if (this.order) {
       const sortedData = this.data
@@ -65,6 +68,8 @@ export default class VerticalBarChart {
       this.svg
         .select('.x-label-group')
         .transition()
+        .delay(this.delay + this.duration)
+        .duration(2 * this.duration)
         // @ts-ignore
         .call(d3.axisBottom(this.xScale));
     }
@@ -147,6 +152,11 @@ export default class VerticalBarChart {
       .selectAll('.value')
       .data(this.data);
 
+    const labelTexts = this.svg
+      .select('.chart-group')
+      .selectAll('.label')
+      .data(this.data);
+
     const a = bars
       .enter()
       .append('rect')
@@ -162,9 +172,10 @@ export default class VerticalBarChart {
       .on('mouseover', this.handleMouseOver.bind(this))
       .on('mouseout', this.handleMouseOut.bind(this));
 
+    const xPosition = (d) => this.xScale(d.label) + this.xScale.bandwidth() / 2;
     const b = valueTexts.enter()
       .append('text')
-      .attr('x', (d) => this.xScale(d.label) + this.xScale.bandwidth() / 2)
+      .attr('x', (d) => xPosition(d))
       .attr('y', this.chartHeight - 20)
       .text((d) => this.dataFormat(d.value))
       // @ts-ignore
@@ -176,22 +187,47 @@ export default class VerticalBarChart {
       .style('font-weight', 'bold')
       .classed('value', true);
 
-    if (this.animate) {
-      const duration = 1000;
-      a.transition()
-        .duration(duration)
-        .attr('y', (d) => this.yScale(d.value))
-        .attr('x', (d) => this.xScale(d.label))
-        .attr('height', (d) => this.chartHeight - this.yScale(d.value));
+    const c = labelTexts.enter()
+      .append('text')
+      .attr('x', (d) => xPosition(d))
+      .attr('y', this.chartHeight - 50)
+      .text((d) => d.label)
+      // @ts-ignore
+      .merge(labelTexts)
+      .style('dominant-baseline', 'central')
+      .style('font-size', () => `${1.5 * this.fontSize}px`)
+      .attr('fill', 'grey')
+      .classed('label', true);
 
-      b.transition()
-        .duration(duration)
-        .attr('x', (d) => this.xScale(d.label) + this.xScale.bandwidth() / 2)
-        .text((d, i) => this.dataFormat(d.value));
+    if (!this.initialised) {
+      c.attr('transform', (d) => `rotate(-90, ${xPosition(d)}, ${this.chartHeight - 50})`);
     }
+
+    a.transition()
+      .duration(this.duration)
+      .attr('y', (d) => this.yScale(d.value))
+      .attr('height', (d) => this.chartHeight - this.yScale(d.value))
+      .transition()
+      .delay(this.delay)
+      .duration(2 * this.duration)
+      .attr('x', (d) => this.xScale(d.label));
+
+    b.transition()
+      .delay(this.delay + this.duration)
+      .duration(2 * this.duration)
+      .attr('x', (d) => xPosition(d))
+      .text((d) => this.dataFormat(d.value));
+
+    c.transition()
+      .delay(this.delay + this.duration)
+      .duration(2 * this.duration)
+      .attr('x', (d) => xPosition(d))
+      .attr('transform', (d) => `rotate(-90, ${xPosition(d)}, ${this.chartHeight - 50})`)
+      .text((d) => d.label);
 
     bars.exit().remove();
     valueTexts.exit().remove();
+    labelTexts.exit().remove();
     this.bars = bars;
   }
 

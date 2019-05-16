@@ -12,7 +12,6 @@ export default class Heatmap {
   boxSize: number;
   xLabels: string[];
   yLabels: string[];
-  animate: boolean;
   strokeWidth: number;
   data: Array<{ x: number; y: number; value: number }>;
   dataUnit: string;
@@ -32,7 +31,6 @@ export default class Heatmap {
     this.margin = properties.margin;
     this.xLabels = properties.xLabels;
     this.yLabels = properties.yLabels;
-    this.animate = properties.animate || true;
     this.data = properties.data;
     this.dataUnit = properties.dataUnit || '';
     this.dataFormat = (a) => `${a}`;
@@ -177,21 +175,18 @@ export default class Heatmap {
       .merge(boxes)
       .style('stroke', '#FFFFFF')
       .style('stroke-width', this.strokeWidth)
+      .style('fill', (d) => this.colorScale(d.value))
       .style('fill', 'gray')
       .classed('box', true)
       .on('mouseover', this.handleMouseOver.bind(this))
       .on('mouseout', this.handleMouseOut.bind(this));
 
-    if (this.animate) {
-      const duration = 2000;
-      a.style('opacity', 0.2)
-        .transition()
-        .duration(duration)
-        .style('fill', (d) => this.colorScale(d.value))
-        .style('opacity', 1);
-    } else {
-      a.style('fill', (d) => this.colorScale(d.value));
-    }
+    const duration = 2000;
+    a.style('opacity', 0.2)
+      .transition()
+      .duration(duration)
+      .style('fill', (d) => this.colorScale(d.value))
+      .style('opacity', 1);
     boxes.exit().remove();
     this.boxes = boxes;
   }
@@ -223,12 +218,13 @@ export default class Heatmap {
       .text((d) => d)
       .attr('y', 0)
       .attr('x', (d, i) => i * this.boxSize)
-      .style('text-anchor', 'middle')
+      .style('text-anchor', 'end')
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
+      .attr('transform', (d, i) => `rotate(-90, ${i * this.boxSize}, ${0})`)
       .attr('class', 'x-label');
     const numLines = Math.max(...this.data.map((elt) => elt.y));
-    const yOffset = this.boxSize * (numLines + 1.5);
+    const yOffset = this.boxSize * (numLines + 1.1);
     xLabelsGroup.attr(
       'transform',
       `translate(${this.boxSize / 2 +
@@ -246,7 +242,7 @@ export default class Heatmap {
       .text((d) => d)
       .attr('y', (d, i) => this.boxSize * i)
       .attr('x', 0)
-      .style('text-anchor', 'left')
+      .style('text-anchor', 'start')
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('class', 'y-label');
