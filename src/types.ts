@@ -31,7 +31,8 @@ export interface IPieProperties {
   margin: IMargin;
   data: Array<{ label: string; value: number }>;
   dataUnit?: string;
-  duration?: number;
+  innerRatio?: number;
+  outerRatio?: number;
   dataFormat?: (value: number) => string;
 }
 

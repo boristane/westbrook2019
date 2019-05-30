@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 
-import { IBarChartProperties, IMargin } from './types';
-import { Selection, selection } from 'd3';
+import { IMargin, IPieProperties } from './types';
+
+import { Selection } from 'd3';
 
 export default class Pie {
   width: number;
@@ -12,30 +13,33 @@ export default class Pie {
   dataUnit: string;
   duration: number;
   dataFormat: (value: number) => string;
+  innerRatio: number;
+  outerRatio: number;
   private chartWidth: number;
   private chartHeight: number;
   private readonly fontSize: number = 12;
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private chart: Selection<any, any, any, any>;
 
-  constructor(properties: IBarChartProperties) {
+  constructor(properties: IPieProperties) {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;
     this.data = properties.data;
     this.dataUnit = properties.dataUnit || '';
     this.dataFormat = (a) => `${a}`;
+    this.innerRatio = properties.innerRatio || 0.75;
+    this.outerRatio = properties.outerRatio || 0.95;
     if (properties.dataFormat) {
       this.dataFormat = properties.dataFormat;
     }
     this.chartWidth = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
-    this.duration = properties.duration / 4 || 1000;
+    this.duration = 500;
   }
 
   public make(selector: string): void {
     this.buildSVG(selector);
-    // this.generateLabels();
     this.generateSlices();
   }
 
@@ -78,18 +82,20 @@ export default class Pie {
 
   private generateSlices(): void {
     const radius = Math.min(this.chartWidth, this.chartHeight) / 2;
-    const pie = d3.pie<number>()
-      .padAngle((d) => 0.01)
+    const pie = d3.pie<{ value: number, label: string }>()
+      .padAngle((d) => 0.005)
       .sortValues((a, b) => b - a)
-      .value((d) => d);
-    const values = this.data.map((elt) => elt.value);
+      .value((d) => d.value);
+    const outerRadius = radius * this.outerRatio;
+    const innerRadius = radius * this.innerRatio;
 
     const path = d3.arc()
-      .outerRadius(radius * 0.9)
-      .innerRadius(radius * 0.7);
+      .outerRadius(outerRadius)
+      .innerRadius(innerRadius)
+      .cornerRadius((d) => 5);
 
     const slices = this.chart.selectAll('.slice')
-      .data(pie(values));
+      .data(pie(this.data));
 
     const arc = slices
       .enter().append('path')
@@ -101,18 +107,36 @@ export default class Pie {
       .domain(this.data.map((d) => d.label))
       .range(d3.quantize((t) => d3.interpolateSpectral(t * 0.8 + 0.1), this.data.length).reverse());
 
-    const a = arc
+    arc
       .attr('fill', (d, i) => colorScale(this.data[i].label))
       .transition()
       .duration(this.duration)
       // @ts-ignore
       .attr('d', path);
 
+    const texts = this.chart.selectAll('.text')
+      .data(pie(this.data));
+
+    const label = texts.enter()
+      .append('text')
+      .classed('text', true)
+      // @ts-ignore
+      .merge(texts)
+      .text((d) => `${d.data.label} - ${this.dataFormat(d.data.value)} ${this.dataUnit}`);
+
+    label
+      .classed('value', true)
+      .transition()
+      .duration(this.duration)
+      .attr('transform', (d) => `translate(${path.centroid(d)})`)
+      .style('text-anchor', (d) => 'middle')
+      .style('dominant-baseline', 'central')
+      .style('font-size', () => `${1.5 * this.fontSize}px`)
+      .attr('fill', 'black')
+      .style('font-weight', 'bold');
+
+    texts.exit().remove();
     slices.exit().remove();
     this.slices = slices;
-  }
-
-  private generateLabels() {
-
   }
 }

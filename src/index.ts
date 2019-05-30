@@ -97,12 +97,13 @@ function pieDemo() {
     };
     const data = rawData;
     const mapProperties: IPieProperties = {
-      width: 150,
-      height: 750,
+      width: 900,
+      height: 950,
+      innerRatio: 0.8,
+      outerRatio: 0.9,
       margin,
       data,
       dataUnit: 'Sale(s)',
-      duration: 1000,
       dataFormat: (value: number) => `${Math.round(value)}`,
     };
     chart = new Pie(mapProperties);
