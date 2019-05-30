@@ -40,8 +40,7 @@ export interface ILineChartProperties {
   width: number;
   height: number;
   margin: IMargin;
-  data: Array<{ x: number; y: number }>;
-  color?: string;
+  data: Array<{ label: string, data: Array<{ x: number; y: number }> }>;
   dataUnit?: string;
   numTicks?: number;
   xAxisLabel?: string;

@@ -90,17 +90,17 @@ function pieDemo() {
   let chart: Pie;
   function main(rawData: Array<{ label: string; value: number }>): void {
     const margin: IMargin = {
-      top: 10,
-      bottom: 10,
-      left: 10,
-      right: 10,
+      top: 50,
+      bottom: 50,
+      left: 50,
+      right: 50,
     };
     const data = rawData;
     const mapProperties: IPieProperties = {
       width: 900,
       height: 950,
-      innerRatio: 0.8,
-      outerRatio: 0.9,
+      innerRatio: 0.4,
+      outerRatio: 0.95,
       margin,
       data,
       dataUnit: 'Sale(s)',
@@ -199,20 +199,18 @@ function heatmapDemo() {
 function lineChartDemo() {
   let chart: LineChart;
 
-  function main(dataset: Array<{ x: number; y: number }>): void {
-    dataset.sort((a, b) => a.x - b.x);
+  function main(dataset: Array<{ label: string, data: Array<{ x: number; y: number }> }>): void {
     const margin: IMargin = {
       top: 10,
       bottom: 10,
       left: 10,
       right: 10,
     };
-    const data = dataset;
     const mapProperties: ILineChartProperties = {
-      width: 550,
+      width: 650,
       height: 750,
       margin,
-      data,
+      data: dataset,
       xAxisLabel: 'Time',
       yAxisLabel: 'Tickets Sold',
       dataUnit: 'Sale(s)',
@@ -222,23 +220,30 @@ function lineChartDemo() {
     chart = new LineChart(mapProperties);
     chart.make('.container');
   }
-  const rawData = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
-  main(rawData);
-  let i = 1;
-  setInterval(() => {
-    const d = {
-      x: Math.max(...rawData.map(d => d.x)) + 1,
+  const data1 = [];
+  const data2 = [];
+  const data3 = [];
+  for (let i = 0; i < 15; i += 1) {
+    data1.push({
+      x: i,
+      y: Math.random() * 10,
+    });
+    data2.push({
+      x: i,
       y: Math.random() * 120,
-    };
-    chart.update(d);
-    i += 1;
-  }, 1000);
+    });
+    data3.push({
+      x: i,
+      y: Math.random() * 50,
+    });
+  }
+  main([{ label: 'first', data: data1 }, { label: 'second', data: data2 }, { label: 'third', data: data3 }]);
 }
 
-// lineChartDemo();
+lineChartDemo();
 
 // verticalBarDemo();
 
-pieDemo();
+// pieDemo();
 
 // heatmapDemo();

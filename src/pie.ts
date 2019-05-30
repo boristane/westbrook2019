@@ -55,7 +55,7 @@ export default class Pie {
       .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
     container
       .append('g')
-      .classed('chart-group', true)
+      .classed('chart-group', true);
     container
       .select('.chart-group')
       .append('g')

@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
 
-import { IBarChartProperties, ILineChartProperties, IMargin } from './types';
+import { ILineChartProperties, IMargin } from './types';
 
 import { Selection } from 'd3';
 import Tooltip from './tooltip';
+import d3Legend from 'd3-svg-legend';
 
 export default class LineChart {
   width: number;
@@ -13,10 +14,9 @@ export default class LineChart {
   yScale;
   line: Selection<any, any, any, any>;
   numTicks: number;
-  data: Array<{ x: number; y: number }>;
+  data: Array<{ label: string, data: Array<{ x: number; y: number }> }>;
   barWidth: number;
   dataUnit: string;
-  color: string;
   xAxisLabel: string;
   yAxisLabel: string;
   dataFormat: (value: number) => string;
@@ -25,6 +25,7 @@ export default class LineChart {
   private readonly fontSize: number = 12;
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
   private tooltip: Tooltip;
+  private colorScale;
 
   constructor(properties: ILineChartProperties) {
     this.width = properties.width;
@@ -39,49 +40,25 @@ export default class LineChart {
     }
     this.chartWidth = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
-    this.color = properties.color || '#C0FFE7';
     this.numTicks = properties.numTicks || 5;
     this.xAxisLabel = properties.xAxisLabel || '';
     this.yAxisLabel = properties.yAxisLabel || '';
+    this.colorScale = d3.scaleOrdinal<string>()
+      .domain(this.data.map((d) => d.label))
+      .range(d3.quantize((t) => d3.interpolateSpectral(t * 0.8 + 0.1), this.data.length).reverse());
   }
 
   public make(selector: string): void {
-    this.data
-      .sort((a, b) => a.x - b.x);
+    this.data.forEach((elt) => {
+      elt.data
+        .sort((a, b) => a.x - b.x);
+    });
     this.buildSVG(selector);
     this.tooltip = new Tooltip(selector);
     this.generateLabels();
     this.generateLine();
-  }
-
-  public update(data: { x: number; y: number }): void {
-    this.data
-      .sort((a, b) => a.x - b.x);
-    const currentxMax = Math.max(...this.data.map((a) => a.x));
-    const curentxMin = Math.min(...this.data.map((a) => a.x));
-    const delatX = data.x - currentxMax;
-    while (this.data[0].x < curentxMin + delatX) {
-      this.data.shift();
-
-    }
-    this.data.push(data);
-
-    this.yScale.domain([Math.min(...this.data.map((a) => a.y)), Math.max(...this.data.map((a) => a.y))]);
-    this.xScale.domain([delatX, Math.max(...this.data.map((a) => a.x))]);
-
-    this.svg
-      .select('.x-label-group')
-      .attr('transform', `translate(0, ${this.chartHeight})`)
-      .transition()
-      // @ts-ignore
-      .call(d3.axisBottom(this.xScale));
-    this.svg
-      .select('.y-label-group')
-      .transition()
-      // @ts-ignore
-      .call(d3.axisLeft(this.yScale).ticks(this.numTicks));
-
-    this.generateLine();
+    const labels = this.data.map((elt) => elt.label);
+    this.generateLegend(labels);
   }
 
   private generateContainerGroups(): void {
@@ -112,7 +89,7 @@ export default class LineChart {
       this.svg = d3
         .select(selector)
         .append('svg')
-        .classed('vertical-bar-chart', true);
+        .classed('line-chart', true);
       this.generateContainerGroups();
     }
     this.svg
@@ -142,59 +119,72 @@ export default class LineChart {
   }
 
   private generateLine(): void {
-    const l = d3.line()
-      .x((d) => this.xScale(d.x))
-      .y((d) => this.yScale(d.y))
-      .curve(d3.curveBasis);
-    const line = this.svg.select('.chart-group').append('g').append('path').datum(this.data);
+    for (const dataset of this.data) {
+      const line = d3.line<{ x: number, y: number }>()
+        .x((d) => this.xScale(d.x))
+        .y((d) => this.yScale(d.y))
+        .curve(d3.curveMonotoneX);
+      const path = this.svg
+        .select('.chart-group')
+        .append('path')
+        .datum(dataset.data);
 
-    // Add the line
-    const path = line
-      .enter()
-      .attr('class', 'line')
-      // ts-ignore
-      .merge(line)
-      .attr('fill', 'none')
-      .attr('stroke', 'steelblue')
-      .attr('stroke-width', 1.5)
-      // .attr('stroke', this.color)
-      .attr('d', l);
+      path
+        .enter()
+        .attr('class', 'line')
+        .merge(path)
+        .attr('fill', 'none')
+        .attr('stroke', (d) => this.colorScale(dataset.label))
+        .attr('stroke-width', 2)
+        .attr('d', line);
 
+      const points = this.svg
+        .select('.chart-group')
+        .append('g')
+        .selectAll('.point')
+        .data(dataset.data);
 
-    const duration = 1000;
-    path.transition()
-      .duration(duration)
-      .attr('d', l);
+      points
+        .enter()
+        .append('circle')
+        .attr('cx', (d) => this.xScale(d.x))
+        .attr('cy', (d) => this.yScale(d.y))
+        .attr('r', (d) => 5)
+        .style('fill', (d) => this.colorScale(dataset.label))
+        .classed('circle', true)
+        .on('mouseover', this.handleMouseOver.bind(this))
+        .on('mouseout', this.handleMouseOut.bind(this));
 
-
-    line.exit().remove();
-    this.line = line;
+      path.exit().remove();
+      this.line = path;
+    }
   }
 
   private generateLabels() {
-    const xData = this.data.map((b) => b.x);
-    const yData = this.data.map((b) => b.y);
+    const xData = this.data.map((b) => b.data.map((a) => a.x));
+    const yData = this.data.map((b) => b.data.map((a) => a.y));
+    function flatten(arr: any[]) {
+      return [].concat.apply([], arr);
+    }
     this.xScale = d3
       .scaleLinear()
-      .range([0, this.chartWidth - 20])
-      .domain([Math.min(...xData), Math.max(...xData)]);
+      .range([0, this.chartWidth - 30])
+      .domain([Math.min(...flatten(xData)), Math.max(...flatten(xData))]);
 
     this.svg
       .select('.x-label-group')
       .append('g')
       .attr('transform', `translate(0, ${this.chartHeight})`)
-      .transition()
       .call(d3.axisBottom(this.xScale));
 
     this.yScale = d3
       .scaleLinear()
       .range([this.chartHeight, 0])
-      .domain([Math.min(...yData), Math.max(...yData)]);
+      .domain([Math.min(...flatten(yData)), Math.max(...flatten(yData)) * 1.1]);
 
     this.svg
       .select('.y-label-group')
       .append('g')
-      .transition()
       .call(d3.axisLeft(this.yScale).ticks(this.numTicks));
 
     this.svg
@@ -217,5 +207,22 @@ export default class LineChart {
       .style('dominant-baseline', 'central')
       .style('font-size', () => `${this.fontSize}px`)
       .attr('transform', `translate(${this.chartWidth / 2}, ${this.height + this.margin.bottom / 2})`);
+  }
+
+  private generateLegend(labels: string[]) {
+    const colors = labels.map((label) => this.colorScale(label));
+    const ordinal = d3.scaleOrdinal()
+      .domain(labels)
+      .range(colors);
+    this.svg.append('g')
+      .attr('class', 'chart-legend')
+      .attr('transform', `translate(${4 * this.fontSize + this.margin.left + 20},${this.margin.top + 20})`);
+    const legendOrdinal = d3Legend.legendColor()
+      .shape('path', d3.symbol().type(d3.symbolSquare).size(400)())
+      .shapePadding(3)
+      .shapeWidth(30)
+      .scale(ordinal);
+    this.svg.select('.chart-legend')
+      .call(legendOrdinal);
   }
 }
