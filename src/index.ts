@@ -1,7 +1,8 @@
-import { IBarChartProperties, IHeatmapProperties, ILineChartProperties, IMargin } from '../src/types';
+import { IBarChartProperties, IHeatmapProperties, ILineChartProperties, IMargin, IPieProperties } from '../src/types';
 
 import Heatmap from './heatmap';
 import LineChart from './line';
+import Pie from './pie';
 import VerticalBarChart from "./verticalBar";
 import data from '../test/fixtures/data.json';
 
@@ -49,6 +50,62 @@ function verticalBarDemo() {
       dataFormat: (value: number) => `${Math.round(value)}`,
     };
     chart = new VerticalBarChart(mapProperties);
+    chart.make('.container');
+  }
+
+  main(data);
+
+  setInterval(() => {
+    const d = daysHuman.map((day, index) => ({
+      label: day,
+      value: Math.random() * 300,
+    }));
+    chart.update(d);
+  }, 2000);
+}
+
+function pieDemo() {
+  const daysHuman = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  const values = [
+    15,
+    12,
+    4,
+    8,
+    9,
+    11,
+    1,
+  ];
+  const data = daysHuman.map((day, index) => ({
+    label: day,
+    value: values[index],
+  }));
+  let chart: Pie;
+  function main(rawData: Array<{ label: string; value: number }>): void {
+    const margin: IMargin = {
+      top: 10,
+      bottom: 10,
+      left: 10,
+      right: 10,
+    };
+    const data = rawData;
+    const mapProperties: IPieProperties = {
+      width: 150,
+      height: 750,
+      margin,
+      data,
+      dataUnit: 'Sale(s)',
+      duration: 1000,
+      dataFormat: (value: number) => `${Math.round(value)}`,
+    };
+    chart = new Pie(mapProperties);
     chart.make('.container');
   }
 
@@ -181,4 +238,6 @@ function lineChartDemo() {
 
 // verticalBarDemo();
 
-heatmapDemo();
+pieDemo();
+
+// heatmapDemo();

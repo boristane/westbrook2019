@@ -25,6 +25,16 @@ export interface IBarChartProperties {
   dataFormat?: (value: number) => string;
 }
 
+export interface IPieProperties {
+  width: number;
+  height: number;
+  margin: IMargin;
+  data: Array<{ label: string; value: number }>;
+  dataUnit?: string;
+  duration?: number;
+  dataFormat?: (value: number) => string;
+}
+
 export interface ILineChartProperties {
   width: number;
   height: number;
