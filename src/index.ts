@@ -1,10 +1,21 @@
-import { IBarChartProperties, IHeatmapProperties, ILineChartProperties, IMargin, IPieProperties } from '../src/types';
+import {
+  IBarChartDataItem,
+  IBarChartProperties,
+  IHeatmapProperties,
+  ILineChartProperties,
+  IMargin,
+  IPieProperties,
+  ISankeyDiagramLink,
+  ISankeyDiagramNode,
+  ISankeyDiagramProperties,
+} from '../src/types';
 
 import Heatmap from './heatmap';
 import LineChart from './line';
 import Pie from './pie';
-import VerticalBarChart from "./verticalBar";
-import data from '../test/fixtures/data.json';
+import SankeyDiagram from './sankey';
+import VerticalBarChart from './verticalBar';
+import importedData from '../test/fixtures/data.json';
 
 function verticalBarDemo() {
   const daysHuman = [
@@ -16,21 +27,13 @@ function verticalBarDemo() {
     'Saturday',
     'Sunday',
   ];
-  const values = [
-    15,
-    12,
-    4,
-    8,
-    9,
-    11,
-    1,
-  ];
-  const data = daysHuman.map((day, index) => ({
+  const values = [15, 12, 4, 8, 9, 11, 1];
+  const data: IBarChartDataItem[] = daysHuman.map((day, index) => ({
     label: day,
     value: values[index],
   }));
   let chart: VerticalBarChart;
-  function main(rawData: Array<{ label: string; value: number }>): void {
+  function main(rawData: IBarChartDataItem[]): void {
     const margin: IMargin = {
       top: 10,
       bottom: 10,
@@ -74,15 +77,7 @@ function pieDemo() {
     'Saturday',
     'Sunday',
   ];
-  const values = [
-    15,
-    12,
-    4,
-    8,
-    9,
-    11,
-    1,
-  ];
+  const values = [15, 12, 4, 8, 9, 11, 1];
   const data = daysHuman.map((day, index) => ({
     label: day,
     value: values[index],
@@ -185,9 +180,9 @@ function heatmapDemo() {
     heatmap.make('.container');
   }
 
-  main(data);
+  main(importedData);
   setInterval(() => {
-    const d = data.map((d) => ({
+    const d = importedData.map((d) => ({
       x: d[1],
       y: d[0],
       value: Math.random() * 35,
@@ -199,7 +194,9 @@ function heatmapDemo() {
 function lineChartDemo() {
   let chart: LineChart;
 
-  function main(dataset: Array<{ label: string, data: Array<{ x: number; y: number }> }>): void {
+  function main(
+    dataset: Array<{ label: string; data: Array<{ x: number; y: number }> }>,
+  ): void {
     const margin: IMargin = {
       top: 10,
       bottom: 10,
@@ -237,13 +234,82 @@ function lineChartDemo() {
       y: Math.random() * 50,
     });
   }
-  main([{ label: 'first', data: data1 }, { label: 'second', data: data2 }, { label: 'third', data: data3 }]);
+  main([
+    { label: 'first', data: data1 },
+    { label: 'second', data: data2 },
+    { label: 'third', data: data3 },
+  ]);
+}
+
+function sankeyDiagramDemo() {
+  const nodes: ISankeyDiagramNode[] = [
+    { name: 'Monday' },
+    { name: 'Tuesday' },
+    { name: 'Wednesday' },
+    { name: 'Thursday' },
+    { name: 'Friday' },
+    { name: 'Saturday' },
+    { name: 'Sunday' },
+  ];
+  const links: ISankeyDiagramLink[] = [
+    { source: 0, target: 1, value: 124 },
+    { source: 1, target: 5, value: 124 },
+    { source: 2, target: 3, value: 124 },
+    { source: 4, target: 5, value: 124 },
+    { source: 3, target: 5, value: 124 },
+    { source: 4, target: 7, value: 124 },
+    { source: 5, target: 6, value: 124 },
+    { source: 5, target: 7, value: 124 },
+    { source: 4, target: 6, value: 124 },
+    { source: 3, target: 4, value: 124 },
+    { source: 1, target: 2, value: 124 },
+    { source: 2, target: 4, value: 124 },
+    { source: 3, target: 5, value: 124 },
+    { source: 1, target: 3, value: 124 },
+    { source: 1, target: 4, value: 124 },
+  ];
+  const data = { nodes, links };
+  let chart: SankeyDiagram;
+  function main(
+    nodes: ISankeyDiagramNode[],
+    links: ISankeyDiagramLink[],
+  ): void {
+    const margin: IMargin = {
+      top: 10,
+      bottom: 10,
+      left: 10,
+      right: 10,
+    };
+    const mapProperties: ISankeyDiagramProperties = {
+      width: 550,
+      height: 750,
+      margin,
+      data: d,
+      order: true,
+      dataUnit: 'Sale(s)',
+      numTicks: 15,
+      duration: 1000,
+      dataFormat: (value: number) => `${Math.round(value)}`,
+    };
+    chart = new SankeyDiagram(mapProperties);
+    chart.make('.container');
+  }
+
+  main(data);
+
+  setInterval(() => {
+    const d = daysHuman.map((day, index) => ({
+      label: day,
+      value: Math.random() * 300,
+    }));
+    chart.update(d);
+  }, 2000);
 }
 
 lineChartDemo();
 
-// verticalBarDemo();
+verticalBarDemo();
 
-// pieDemo();
+pieDemo();
 
-// heatmapDemo();
+heatmapDemo();

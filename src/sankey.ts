@@ -1,11 +1,15 @@
 import * as d3 from 'd3';
 
-import { IBarChartDataItem, IBarChartProperties, IMargin } from './types';
+import {
+  IBarChartProperties,
+  IMargin,
+  ISankeyDiagramProperties,
+} from './types';
 
 import { Selection } from 'd3';
-import Tooltip from './tooltip';
+import s from 'd3-sankey';
 
-export default class VerticalBarChart {
+export default class SankeyDiagram {
   width: number;
   height: number;
   margin: IMargin;
@@ -13,10 +17,9 @@ export default class VerticalBarChart {
   yScale;
   bars: Selection<any, any, any, any>;
   numTicks: number;
-  data: IBarChartDataItem[];
+  data: Array<{ label: string; value: number }>;
   dataUnit: string;
   order: boolean;
-  color: string;
   axisLabel: string;
   duration: number;
   delay: number;
@@ -25,10 +28,9 @@ export default class VerticalBarChart {
   private chartHeight: number;
   private readonly fontSize: number = 12;
   private svg: Selection<SVGSVGElement, {}, HTMLElement, any>;
-  private tooltip: Tooltip;
   private initialised: boolean = false;
 
-  constructor(properties: IBarChartProperties) {
+  constructor(properties: ISankeyDiagramProperties) {
     this.width = properties.width;
     this.height = properties.height;
     this.margin = properties.margin;
@@ -40,7 +42,6 @@ export default class VerticalBarChart {
     }
     this.chartWidth = this.width - this.margin.left - this.margin.right;
     this.chartHeight = this.height - this.margin.top - this.margin.bottom;
-    this.color = properties.color || '#C0FFE7';
     this.numTicks = properties.numTicks || 5;
     this.order = properties.order === undefined ? true : properties.order;
     this.axisLabel = properties.axisLabel || '';
@@ -50,7 +51,6 @@ export default class VerticalBarChart {
 
   public make(selector: string): void {
     this.buildSVG(selector);
-    this.tooltip = new Tooltip(selector);
     this.generateLabels();
     this.generateBars();
     this.initialised = true;
@@ -117,28 +117,6 @@ export default class VerticalBarChart {
       .attr('height', this.height + this.margin.top + this.margin.bottom);
   }
 
-  private handleMouseOver(d: { label: string; value: number }) {
-    const x = d3.event.pageX;
-    const y = d3.event.pageY;
-    this.tooltip.show(this.transformForTooltip(d), x, y);
-  }
-
-  private handleMouseOut() {
-    this.tooltip.hide();
-  }
-
-  private transformForTooltip(data: { label: string; value: number }) {
-    return `
-      <p>
-        <span>${
-          data.label
-        }</span> <span style="font-weight: bold">${this.dataFormat(
-      data.value,
-    )} ${this.dataUnit}</span>
-        </p>
-    `;
-  }
-
   private generateBars(): void {
     const boxRadius = this.xScale.bandwidth() / 100;
     const bars = this.svg
@@ -167,9 +145,7 @@ export default class VerticalBarChart {
       // @ts-ignore
       .merge(bars)
       .style('fill', this.color)
-      .classed('bar', true)
-      .on('mouseover', this.handleMouseOver.bind(this))
-      .on('mouseout', this.handleMouseOut.bind(this));
+      .classed('bar', true);
 
     const xPosition = (d) => this.xScale(d.label) + this.xScale.bandwidth() / 2;
     const b = valueTexts
@@ -275,5 +251,29 @@ export default class VerticalBarChart {
         'transform',
         `translate(${10}, ${this.chartHeight / 2}) rotate(-90)`,
       );
+  }
+
+  private sankey() {
+    const sankey = s
+      .sankey()
+      .nodeAlign(d3[`sankey${align[0].toUpperCase()}${align.slice(1)}`])
+      .nodeWidth(15)
+      .nodePadding(10)
+      .extent([[1, 5], [this.width - 1, this.height - 5]]);
+    return ({ nodes, links }) =>
+      sankey({
+        nodes: nodes.map((d) => Object.assign({}, d)),
+        links: links.map((d) => Object.assign({}, d)),
+      });
+  }
+
+  private format() {
+    const f = d3.format(',.0f');
+    return (d) => `${f(d)} TWh`;
+  }
+
+  private color() {
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
+    return (name) => color(name.replace(/ .*/, ''));
   }
 }
